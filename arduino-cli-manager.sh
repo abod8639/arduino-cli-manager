@@ -358,7 +358,7 @@ function main_menu() {
         echo -e "${C_BLUE}4.${C_RESET} Select Port               ${C_BLUE}8.${C_RESET} Open Serial Monitor"
         echo -e "${C_BLUE}9.${C_RESET} Install a Core"
         echo
-        echo -e "${C_RED}10. Exit${C_RESET}"
+        echo -e "${C_RED}0. Exit${C_RESET}"
         echo "----------------------------------------------------------"
         read -rp "Choose option: " option
 
@@ -372,7 +372,7 @@ function main_menu() {
         7) upload_sketch ;;
         8) open_serial ;;
         9) install_core ;;
-        10) clear; echo "Goodbye!"; break ;;
+        0) clear; echo "Goodbye!"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
     done
