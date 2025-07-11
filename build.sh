@@ -2,7 +2,7 @@
 
 # Default configuration
 BOARD_FQBN="${BOARD_FQBN:-esp32:esp32:esp32}"
-PORT="${PORT:-/dev/ttyACM0}"
+PORT="${PORT:-/dev/ttyACM1}"
 SKETCH_NAME="my_arduino_project"
 
 # Compile the sketch

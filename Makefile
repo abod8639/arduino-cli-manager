@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 # Default configuration
 BOARD_FQBN ?= esp32:esp32:esp32
-PORT ?= /dev/ttyACM0
+PORT ?= /dev/ttyACM1
 SKETCH_NAME = my_arduino_project
 
 .PHONY: all compile upload build monitor clean
