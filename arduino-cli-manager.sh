@@ -38,6 +38,7 @@ function print_header() {
     echo -e "${C_GREEN}"
     echo "     ┌───────────────────────────────────────────────┐"
     echo "     │               ARDUINO MANAGER                 │"
+    echo "     │                                               │"
     echo "     │ select board, serial, compile, upload & more  │"
     echo "     └───────────────────────────────────────────────┘"
     echo -e "${C_GREEN}"
@@ -52,12 +53,40 @@ function press_enter_to_continue() {
     read -p "Press Enter to continue..."
 }
 
+# --- Error Handling ---
+function handle_error() {
+    local command_name="$1"
+    local error_message="$2"
+    echo -e "${C_RED}Error during $command_name: ${error_message}${C_RESET}"
+    press_enter_to_continue
+}
+
+function run_arduino_cli_command() {
+    local command_args=("$@")
+    local command_name="arduino-cli ${command_args[*]}"
+    local output
+    local error_output
+    local exit_code
+
+    # Execute the command and capture stdout, stderr, and exit code
+    output=$(arduino-cli "${command_args[@]}" 2>&1)
+    exit_code=$?
+
+    if [ $exit_code -ne 0 ]; then
+        handle_error "$command_name" "$output"
+        return 1 # Indicate failure
+    else
+        echo "$output" # Print successful output
+        return 0 # Indicate success
+    fi
+}
+
 # --- Core Functions ---
 
 function list_installed_boards() {
     print_header
     echo -e "${C_GREEN}==> Installed Boards:${C_RESET}"
-    arduino-cli core list
+    run_arduino_cli_command core list
     echo
     press_enter_to_continue
 }
@@ -65,7 +94,7 @@ function list_installed_boards() {
 function list_all_supported_boards() {
     print_header
     echo -e "${C_GREEN}==> All Supported Boards (use this to find FQBNs):${C_RESET}"
-    arduino-cli board listall | awk '{print $1}' | grep -v "FQBN"
+    run_arduino_cli_command board listall | awk '{print $1}' | grep -v "FQBN"
     echo
     press_enter_to_continue
 }
@@ -76,7 +105,7 @@ function _select_board_fzf() {
     echo -e "${C_GREEN}==> Use the interactive search to find and select a board.${C_RESET}"
     local choice
     # Use fzf for an interactive filter
-    choice=$(arduino-cli board listall | sed '1d' | fzf --height 40% --reverse --prompt="Select a board: ")
+    choice=$(run_arduino_cli_command board listall | sed '1d' | fzf --height 40% --reverse --prompt="Select a board: ")
     
     if [[ -n "$choice" ]]; then
         # Robustly extract FQBN by looking for the pattern vendor:arch:board
@@ -92,7 +121,7 @@ function _select_board_fzf() {
 # --- Helper function for menu-based board selection ---
 function _select_board_menu() {
     local all_boards
-    mapfile -t all_boards < <(arduino-cli board listall | sed '1d') # Pre-load all boards, remove header
+    mapfile -t all_boards < <(run_arduino_cli_command board listall | sed '1d') # Pre-load all boards, remove header
 
     while true; do
         print_header
@@ -158,7 +187,7 @@ function select_board() {
 function select_port() {
     print_header
     echo -e "${C_GREEN}==> Select a port:${C_RESET}"
-    mapfile -t ports < <(arduino-cli board list | awk 'NR>1')
+    mapfile -t ports < <(run_arduino_cli_command board list | awk 'NR>1')
 
     if [ ${#ports[@]} -eq 0 ]; then
         echo -e "${C_RED}No connected boards found. Using default port: $DEFAULT_PORT${C_RESET}"
@@ -202,7 +231,7 @@ function select_or_create_project() {
         elif [[ "$choice" == "--- CREATE NEW PROJECT ---" ]]; then
             read -rp "Enter new sketch name: " name
             if [[ -n "$name" ]]; then
-                arduino-cli sketch new "$SKETCH_DIR/$name"
+                run_arduino_cli_command sketch new "$SKETCH_DIR/$name"
                 PROJECT="$SKETCH_DIR/$name"
             fi
         else
@@ -218,7 +247,7 @@ function select_or_create_project() {
         if [[ "$menu_choice" == "2" ]]; then
             read -rp "Enter new sketch name: " name
             if [[ -n "$name" ]]; then
-                arduino-cli sketch new "$SKETCH_DIR/$name"
+                run_arduino_cli_command sketch new "$SKETCH_DIR/$name"
                 PROJECT="$SKETCH_DIR/$name"
             fi
         else
@@ -250,7 +279,7 @@ function compile_sketch() {
         return
     fi
     echo -e "${C_GREEN}==> Compiling sketch '${PROJECT##*/}'...${C_RESET}"
-    arduino-cli compile --fqbn "${FQBN:-$DEFAULT_FQBN}" "$PROJECT"
+    run_arduino_cli_command compile --fqbn "${FQBN:-$DEFAULT_FQBN}" "$PROJECT"
     press_enter_to_continue
 }
 
@@ -264,7 +293,7 @@ function upload_sketch() {
         # Default to Yes if user just presses Enter
         if [[ -z "$choice" || "$choice" =~ ^[Yy]$ ]]; then
             echo -e "${C_GREEN}==> Uploading sketch '${PROJECT##*/}'...${C_RESET}"
-            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT" -v
+            run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT" -v
             press_enter_to_continue
             return
         fi
@@ -284,7 +313,7 @@ function upload_sketch() {
         elif [[ -n "$project_dir" ]]; then
             local project_path="$SKETCH_DIR/${project_dir%/}"
             echo -e "${C_GREEN}==> Uploading sketch '${project_dir%/}'...${C_RESET}"
-            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_path" -v
+            run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_path" -v
             break # Exit select loop
         else
             echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
@@ -300,7 +329,7 @@ function open_serial() {
     echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT}...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
     sleep 1
-    arduino-cli monitor -p "${PORT:-$DEFAULT_PORT}" --config 115200
+    run_arduino_cli_command monitor -p "${PORT:-$DEFAULT_PORT}" --config 115200
     press_enter_to_continue
 }
 
@@ -313,7 +342,7 @@ function install_core() {
     if command -v fzf &> /dev/null; then
         echo -e "${C_GREEN}==> Use the interactive search to find and select a core.${C_RESET}"
         local choice
-        choice=$(arduino-cli core search --all | sed '1d' | fzf --height 40% --reverse --prompt="Select a core: ")
+        choice=$(run_arduino_cli_command core search --all | sed '1d' | fzf --height 40% --reverse --prompt="Select a core: ")
         
         if [[ -n "$choice" ]]; then
             core_name=$(echo "$choice" | awk '{print $1}')
@@ -325,7 +354,7 @@ function install_core() {
         sleep 3
 
         echo -e "${C_GREEN}==> Available Cores:${C_RESET}"
-        mapfile -t all_cores < <(arduino-cli core search --all | sed '1d')
+        mapfile -t all_cores < <(run_arduino_cli_command core search --all | sed '1d')
 
         select choice in "${all_cores[@]}" "Cancel"; do
             if [[ "$choice" == "Cancel" ]]; then
@@ -341,7 +370,7 @@ function install_core() {
 
     if [[ -n "$core_name" ]]; then
         echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
-        arduino-cli core install "$core_name"
+        run_arduino_cli_command core install "$core_name"
     else
         echo -e "${C_RED}No core selected or entered.${C_RESET}"
         sleep 1
