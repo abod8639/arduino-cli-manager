@@ -26,13 +26,27 @@ PROJECT=""
 
 function print_header() {
     clear
+    echo ""
     echo -e "${C_CYAN}"
-    echo "    ___    __    ____  _  _  ____  ____  _  _  ___ "
-    echo "   / __)  /__\\  (  _ \\( \\/ )( ___)(  _ \\( \\/ )/ __)"
-    echo "  ( (__  /(__)\\  )   / \\  /  )__)  )   / \\  / \\__ \\"
-    echo "   \\___)(__)(__)(_)\\_)  \\/  (____)(_)\\_)  \\/  (___/"
-    echo -e "${C_RESET}"
-    echo -e "            ${C_PURPLE}A r d u i n o  -  M a n a g e r${C_RESET}"
+    echo "  █████╗ ██████╗ ██████╗ ██╗   ██╗██╗███╗   ██╗ ██████╗ "
+    echo " ██╔══██╗██╔══██╗██╔══██╗██║   ██║██║████╗  ██║██╔════╝ "
+    echo " ███████║██████╔╝██████╔╝██║   ██║██║██╔██╗ ██║██║  ███╗"
+    echo " ██╔══██║██╔═══╝ ██╔═══╝ ██║   ██║██║██║╚██╗██║██║   ██║"
+    echo " ██║  ██║██║     ██║     ╚██████╔╝██║██║ ╚████║╚██████╔╝"
+    echo " ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo -e "${C_CYAN}"
+    # echo "    ___    __    ____  _  _  ____  ____  _  _  ___ "
+    # echo "   / __)  /__\\  (  _ \\( \\/ )( ___)(  _ \\( \\/ )/ __)"
+    # echo "  ( (__  /(__)\\  )   / \\  /  )__)  )   / \\  / \\__ \\"
+    # echo "   \\___)(__)(__)(_)\\_)  \\/  (____)(_)\\_)  \\/  (___/"
+    echo -e "${C_GREEN}"
+    echo "     ┌───────────────────────────────────────────────┐"
+    echo "     │               ARDUINO MANAGER                 │"
+    echo "     │ select board, serial, compile, upload & more  │"
+    echo "     └───────────────────────────────────────────────┘"
+    echo -e "${C_GREEN}"
+    # echo -e "         "
+    # echo -e "            ${C_PURPLE}A r d u i n o  -  M a n a g e r${C_RESET}"
     echo "----------------------------------------------------------"
     echo -e " ${C_YELLOW}Board:${C_RESET}    ${FQBN:-$DEFAULT_FQBN} "
     echo -e " ${C_YELLOW}Port:${C_RESET}     ${PORT:-$DEFAULT_PORT}"
@@ -256,7 +270,7 @@ function upload_sketch() {
         # Default to Yes if user just presses Enter
         if [[ -z "$choice" || "$choice" =~ ^[Yy]$ ]]; then
             echo -e "${C_GREEN}==> Uploading sketch '${PROJECT##*/}'...${C_RESET}"
-            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT"
+            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT" -v
             press_enter_to_continue
             return
         fi
@@ -276,7 +290,7 @@ function upload_sketch() {
         elif [[ -n "$project_dir" ]]; then
             local project_path="$SKETCH_DIR/${project_dir%/}"
             echo -e "${C_GREEN}==> Uploading sketch '${project_dir%/}'...${C_RESET}"
-            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_path"
+            arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_path" -v
             break # Exit select loop
         else
             echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"

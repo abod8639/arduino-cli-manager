@@ -32,6 +32,7 @@ Install the board cores for the microcontrollers you work with. For example, to 
 ```bash
 arduino-cli core update-index
 arduino-cli core install esp32:esp32
+arduino-cli core install arduino:samd
 ```
 
 ### Step 3: `fzf` (Highly Recommended)
