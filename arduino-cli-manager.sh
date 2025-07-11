@@ -35,18 +35,12 @@ function print_header() {
     echo " ██║  ██║██║     ██║     ╚██████╔╝██║██║ ╚████║╚██████╔╝"
     echo " ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
     echo -e "${C_CYAN}"
-    # echo "    ___    __    ____  _  _  ____  ____  _  _  ___ "
-    # echo "   / __)  /__\\  (  _ \\( \\/ )( ___)(  _ \\( \\/ )/ __)"
-    # echo "  ( (__  /(__)\\  )   / \\  /  )__)  )   / \\  / \\__ \\"
-    # echo "   \\___)(__)(__)(_)\\_)  \\/  (____)(_)\\_)  \\/  (___/"
     echo -e "${C_GREEN}"
     echo "     ┌───────────────────────────────────────────────┐"
     echo "     │               ARDUINO MANAGER                 │"
     echo "     │ select board, serial, compile, upload & more  │"
     echo "     └───────────────────────────────────────────────┘"
     echo -e "${C_GREEN}"
-    # echo -e "         "
-    # echo -e "            ${C_PURPLE}A r d u i n o  -  M a n a g e r${C_RESET}"
     echo "----------------------------------------------------------"
     echo -e " ${C_YELLOW}Board:${C_RESET}    ${FQBN:-$DEFAULT_FQBN} "
     echo -e " ${C_YELLOW}Port:${C_RESET}     ${PORT:-$DEFAULT_PORT}"
@@ -310,6 +304,51 @@ function open_serial() {
     press_enter_to_continue
 }
 
+function install_core() {
+    print_header
+    echo -e "${C_GREEN}==> Install a new core${C_RESET}"
+    local core_name=""
+
+    # Check if fzf is installed for a better experience
+    if command -v fzf &> /dev/null; then
+        echo -e "${C_GREEN}==> Use the interactive search to find and select a core.${C_RESET}"
+        local choice
+        choice=$(arduino-cli core search --all | sed '1d' | fzf --height 40% --reverse --prompt="Select a core: ")
+        
+        if [[ -n "$choice" ]]; then
+            core_name=$(echo "$choice" | awk '{print $1}')
+        fi
+    else
+        # Fallback to menu if fzf is not installed
+        echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
+        echo "(e.g., 'sudo apt install fzf' or 'brew install fzf')"
+        sleep 3
+
+        echo -e "${C_GREEN}==> Available Cores:${C_RESET}"
+        mapfile -t all_cores < <(arduino-cli core search --all | sed '1d')
+
+        select choice in "${all_cores[@]}" "Cancel"; do
+            if [[ "$choice" == "Cancel" ]]; then
+                break
+            elif [[ -n "$choice" ]]; then
+                core_name=$(echo "$choice" | awk '{print $1}')
+                break
+            else
+                echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
+            fi
+        done
+    fi
+
+    if [[ -n "$core_name" ]]; then
+        echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
+        arduino-cli core install "$core_name"
+    else
+        echo -e "${C_RED}No core selected or entered.${C_RESET}"
+        sleep 1
+    fi
+    press_enter_to_continue
+}
+
 function main_menu() {
     while true; do
         print_header
@@ -317,8 +356,9 @@ function main_menu() {
         echo -e "${C_BLUE}2.${C_RESET} List All Boards           ${C_BLUE}6.${C_RESET} Compile Current Project"
         echo -e "${C_BLUE}3.${C_RESET} Select Board (FQBN)       ${C_BLUE}7.${C_RESET} Upload a Project"
         echo -e "${C_BLUE}4.${C_RESET} Select Port               ${C_BLUE}8.${C_RESET} Open Serial Monitor"
+        echo -e "${C_BLUE}9.${C_RESET} Install a Core"
         echo
-        echo -e "${C_RED}9. Exit${C_RESET}"
+        echo -e "${C_RED}10. Exit${C_RESET}"
         echo "----------------------------------------------------------"
         read -rp "Choose option: " option
 
@@ -331,7 +371,8 @@ function main_menu() {
         6) compile_sketch ;;
         7) upload_sketch ;;
         8) open_serial ;;
-        9) clear; echo "Goodbye!"; break ;;
+        9) install_core ;;
+        10) clear; echo "Goodbye!"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
     done
