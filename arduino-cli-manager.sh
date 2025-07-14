@@ -91,7 +91,6 @@ function handle_error() {
     local command_name="$1"
     local error_message="$2"
     echo -e "${C_RED}Error during $command_name: ${error_message}${C_RESET}"
-    # press_enter_to_continue
 }
 
 function run_arduino_cli_command() {
@@ -101,7 +100,6 @@ function run_arduino_cli_command() {
     local error_output
     local exit_code
 
-    # Execute the command and capture stdout, stderr, and exit code
     output=$(arduino-cli "${command_args[@]}" 2>&1)
     exit_code=$?
 
@@ -136,13 +134,11 @@ function _select_board_fzf() {
     print_header
     echo -e "${C_GREEN}==> Use interactive search. ${C_YELLOW}Enter${C_RESET} to select.${C_RESET}"
     local choice
-    # Use fzf for an interactive filter
     choice=$(run_arduino_cli_command board listall | sed '1d' | \
         fzf --reverse --prompt="Select a board: " \
             --header "Enter to select." )
     
     if [[ -n "$choice" ]]; then
-        # Robustly extract FQBN by looking for the pattern vendor:arch:board
         local selected_fqbn
         selected_fqbn=$(echo "$choice" | awk '{for (i=1; i<=NF; i++) {if ($i ~ /.*:.*:.*/) {print $i; break}}}')
         FQBN="$selected_fqbn"
@@ -166,7 +162,6 @@ function _select_board_menu() {
             return
         fi
 
-        # Filter the pre-loaded list
         local filtered_boards=()
         for board in "${all_boards[@]}"; do
             if [[ -z "$search_term" || "$board" =~ .*$search_term.* ]]; then
@@ -209,7 +204,6 @@ function select_board() {
     if command -v fzf &> /dev/null; then
         _select_board_fzf
     else
-        # Inform the user about fzf and fall back to the menu
         print_header
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
         echo "(e.g., 'sudo apt install fzf' or 'brew install fzf')"
@@ -292,7 +286,6 @@ function select_or_create_project() {
             PROJECT="$choice"
         fi
     else
-        # Fallback to the original menu if fzf is not installed
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a better project selection experience.${C_RESET}"
         sleep 2
         print_header
@@ -385,7 +378,7 @@ function open_serial() {
 
     read -rp "Use current baud rate (${BAUD:-$DEFAULT_BAUD})? [Y/n]: " use_current_baud
     if [[ -z "$use_current_baud" || "$use_current_baud" =~ ^[Yy]$ ]]; then
-        : # No-op, baud is already set
+        :
     else
         local baud_rates=(
           "300"      
@@ -450,12 +443,10 @@ function open_serial() {
     press_enter_to_continue
 }
 
-
 function install_core() {
     print_header
     local core_name=""
 
-    # Check if fzf is installed for a better experience
     if command -v fzf &> /dev/null; then
         echo -e "${C_GREEN}==> Use interactive search to find and select cores.${C_RESET}"
         echo -e "${C_YELLOW}Use TAB to multi-select. Enter to install.${C_RESET}"
@@ -488,7 +479,6 @@ function install_core() {
         press_enter_to_continue
         return
     else
-        # Fallback to menu if fzf is not installed
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
         echo "(e.g., 'sudo apt install fzf' or 'brew install fzf')"
         sleep 3
