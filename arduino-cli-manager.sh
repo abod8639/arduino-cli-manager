@@ -82,7 +82,6 @@ function print_header() {
     echo "───────────────────────────────────────────────────────────"
 }
 
-
 function press_enter_to_continue() {
     read -p "Press Enter to continue..."
 }
@@ -339,36 +338,47 @@ function compile_sketch() {
 function upload_sketch() {
     print_header
 
+    local project_to_upload=""
+
+    # First, determine which project to upload
     if [[ -n "$PROJECT" && "$PROJECT" != "$DEFAULT_PROJECT" ]]; then
         echo -e "${C_GREEN}==> Current project is '${C_YELLOW}${PROJECT##*/}${C_GREEN}'.${C_RESET}"
         read -rp "Upload this project? [Y/n]: " choice
         if [[ -z "$choice" || "$choice" =~ ^[Yy]$ ]]; then
-            echo -e "${C_GREEN}==> Uploading sketch '${PROJECT##*/}'...${C_RESET}"
-            run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT" -v
-            press_enter_to_continue
-            return
+            project_to_upload="$PROJECT"
         fi
     fi
 
-    # If no project was selected, or user said no, show the fzf selection menu
-    print_header
-    echo -e "${C_GREEN}==> Select a project to upload:${C_RESET}"
+    # If no project was chosen above, show the selection menu
+    if [[ -z "$project_to_upload" ]]; then
+        # A second print_header is needed in case we came from the prompt above
+        print_header
+        echo -e "${C_GREEN}==> Select a project to upload:${C_RESET}"
 
-    local find_cmd
-    if command -v fd &> /dev/null; then
-        find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
-    else
-        find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
+        local find_cmd
+        if command -v fd &> /dev/null; then
+            find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
+        else
+            find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
+        fi
+
+        project_to_upload=$(eval "$find_cmd" | \
+            fzf --reverse --prompt="Select project to upload: "
+        )
     fi
 
-    local project_to_upload
-    project_to_upload=$(eval "$find_cmd" | \
-        fzf --reverse --prompt="Select project to upload: "
-    )
-
+    # Now, perform the upload if a project was selected
     if [[ -n "$project_to_upload" ]]; then
         echo -e "${C_GREEN}==> Uploading sketch '${project_to_upload##*/}'...${C_RESET}"
-        run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v
+        if ! arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v; then
+            echo -e "${C_RED}Error: Upload failed for '${project_to_upload##*/}'. Please check the output above for details.${C_RESET}"
+            press_enter_to_continue
+            return # Exit function on failure
+        fi
+        echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully.${C_RESET}"
+    else
+        # This case happens if user presses Esc in fzf or says "n" to current project and Esc in fzf
+        echo -e "${C_RED}No project selected for upload.${C_RESET}"
     fi
 
     press_enter_to_continue
