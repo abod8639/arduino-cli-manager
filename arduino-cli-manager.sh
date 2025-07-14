@@ -248,73 +248,130 @@ function select_port() {
 function select_or_create_project() {
     print_header
 
+    local search_dir="$SKETCH_DIR"
+
     if command -v fzf &> /dev/null; then
-        local find_cmd
-        if command -v fd &> /dev/null; then
-            find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
-        else
-            find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
-        fi
-
-        local projects
-        projects=$(eval "$find_cmd")
-
-        local choice
-        choice=$( (echo "--- CREATE NEW PROJECT ---"; echo "$projects") | \
-            fzf --reverse --prompt="Select or create a project: " \
-                --header "Enter: select, Ctrl-D: delete project" \
-                --bind "ctrl-d:execute(\
-                    if [ {} != '--- CREATE NEW PROJECT ---' ]; then\
-                        read -p \"Delete project {/}? This is irreversible. [y/N] \" -n 1 -r; echo;\
-                        if [[ \$REPLY =~ ^[Yy]$ ]]; then\
-                            rm -rf \"{}\" && echo 'Project deleted.' || echo 'Failed to delete.'\
-                            sleep 1;\
-                        fi\
-                    fi\
-                )+reload( (echo \"--- CREATE NEW PROJECT ---\"; eval \"$find_cmd\") )"
-        )
-
-        if [[ -z "$choice" ]]; then
-            return # User pressed Esc
-        elif [[ "$choice" == "--- CREATE NEW PROJECT ---" ]]; then
-            read -rp "Enter new sketch name: " name
-            if [[ -n "$name" ]]; then
-                run_arduino_cli_command sketch new "$SKETCH_DIR/$name"
-                PROJECT="$SKETCH_DIR/$name"
+        while true; do
+            print_header
+            local find_cmd
+            if command -v fd &> /dev/null; then
+                find_cmd="fd . \"$search_dir\" --type d --max-depth 1"
+            else
+                find_cmd="find \"$search_dir\" -mindepth 1 -maxdepth 1 -type d"
             fi
-        else
-            PROJECT="$choice"
-        fi
+
+            local projects
+            projects=$(eval "$find_cmd" 2>/dev/null)
+
+            local choice
+            choice=$( (printf "--- CREATE NEW PROJECT in '%s' ---\n--- BROWSE other location ---\n%s" "$search_dir" "$projects") | \
+                fzf --reverse --prompt="Select project in '$search_dir': " \
+                    --header "Enter: select, Ctrl-D: delete project" \
+                    --bind "ctrl-d:execute( \
+                        if [[ {} != '---'* ]]; then \
+                            read -p \"Delete project {/}? This is irreversible. [y/N] \" -n 1 -r; echo; \
+                            if [[ \$REPLY =~ ^[Yy]$ ]]; then \
+                                rm -rf '{}' && echo 'Project deleted. Re-enter menu to see changes.' || echo 'Failed to delete.'; \
+                                sleep 2; \
+                            fi; \
+                        fi \
+                    )"
+            )
+
+            if [[ -z "$choice" ]]; then
+                return # User pressed Esc
+            elif [[ "$choice" == "--- BROWSE other location ---" ]]; then
+                read -e -rp "Enter new search directory: " new_dir
+                if [[ -d "$new_dir" ]]; then
+                    search_dir=$(realpath "$new_dir")
+                else
+                    echo -e "${C_RED}Directory not found: '$new_dir'${C_RESET}"
+                    sleep 1
+                fi
+                continue # restart loop
+            elif [[ "$choice" == "--- CREATE NEW PROJECT in '$search_dir' ---" ]]; then
+                read -rp "Enter new sketch name: " name
+                if [[ -n "$name" ]]; then
+                    run_arduino_cli_command sketch new "$search_dir/$name"
+                    PROJECT="$search_dir/$name"
+                    break # exit loop
+                fi
+            else
+                PROJECT="$choice"
+                break # exit loop
+            fi
+        done
     else
+        # Non-fzf version
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a better project selection experience.${C_RESET}"
         sleep 2
-        print_header
-        echo -e "${C_GREEN}==> (1) Select an existing sketch? \n==> (2) Create a new sketch?${C_RESET}"
-        read -rp "[1/2]: " menu_choice
-        if [[ "$menu_choice" == "2" ]]; then
-            read -rp "Enter new sketch name: " name
-            if [[ -n "$name" ]]; then
-                run_arduino_cli_command sketch new "$SKETCH_DIR/$name"
-                PROJECT="$SKETCH_DIR/$name"
-            fi
-        else
-            echo -e "${C_GREEN}==> Select a project from $SKETCH_DIR:${C_RESET}"
-            local current_dir
-            current_dir=$(pwd)
-            cd "$SKETCH_DIR" || return
+        local menu_search_dir="$SKETCH_DIR"
+        while true; do
+            print_header
+            echo -e "${C_GREEN}==> Project Directory: $menu_search_dir${C_RESET}"
+            echo -e "    (1) Select an existing sketch"
+            echo -e "    (2) Create a new sketch"
+            echo -e "    (3) Change project directory"
+            echo -e "    (b) Back to main menu"
+            read -rp "Choose option [1/2/3/b]: " menu_choice
 
-            select project_dir in */ "Cancel"; do
-                if [[ "$project_dir" == "Cancel" ]]; then
-                    break
-                elif [[ -n "$project_dir" ]]; then
-                    PROJECT="$SKETCH_DIR/${project_dir%/}"
-                    break
-                else
-                    echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
-                fi
-            done
-            cd "$current_dir"
-        fi
+            case "$menu_choice" in
+                "1"|"")
+                    echo -e "${C_GREEN}==> Select a project from $menu_search_dir:${C_RESET}"
+                    local current_dir
+                    current_dir=$(pwd)
+                    if ! cd "$menu_search_dir"; then
+                        echo -e "${C_RED}Cannot access directory: $menu_search_dir${C_RESET}"
+                        sleep 1
+                        continue
+                    fi
+
+                    if ! compgen -G "*/" > /dev/null; then
+                        echo -e "${C_YELLOW}No projects found in this directory.${C_RESET}"
+                        cd "$current_dir"
+                        sleep 1
+                        continue
+                    fi
+
+                    select project_dir in */ "Cancel"; do
+                        if [[ "$project_dir" == "Cancel" ]]; then
+                            break
+                        elif [[ -n "$project_dir" ]]; then
+                            PROJECT="$menu_search_dir/${project_dir%/}"
+                            cd "$current_dir"
+                            return # project selected, exit function
+                        else
+                            echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
+                        fi
+                    done
+                    cd "$current_dir"
+                    ;;
+                "2")
+                    read -rp "Enter new sketch name: " name
+                    if [[ -n "$name" ]]; then
+                        run_arduino_cli_command sketch new "$menu_search_dir/$name"
+                        PROJECT="$menu_search_dir/$name"
+                        return # project created, exit function
+                    fi
+                    ;;
+                "3")
+                    read -e -rp "Enter new project directory: " new_dir
+                    if [[ -d "$new_dir" ]]; then
+                        menu_search_dir=$(realpath "$new_dir")
+                    else
+                        echo -e "${C_RED}Directory not found: '$new_dir'${C_RESET}"
+                        sleep 1
+                    fi
+                    ;;
+                "b")
+                    return
+                    ;;
+                *)
+                    echo -e "${C_RED}Invalid option.${C_RESET}"
+                    sleep 1
+                    ;;
+            esac
+        done
     fi
 }
 
