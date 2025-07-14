@@ -112,30 +112,31 @@ For the best experience, install the command-line fuzzy finder `fzf`. The script
 You will be greeted by the main menu, which always displays your current settings at the top.
 
 ```
-  █████╗ ██████╗ ██████╗ ██╗   ██╗██╗███╗   ██╗ ██████╗ 
- ██╔══██╗██╔══██╗██╔══██╗██║   ██║██║████╗  ██║██╔════╝ 
- ███████║██████╔╝██████╔╝██║   ██║██║██╔██╗ ██║██║  ███╗
- ██╔══██║██╔═══╝ ██╔═══╝ ██║   ██║██║██║╚██╗██║██║   ██║
- ██║  ██║██║     ██║     ╚██████╔╝██║██║ ╚████║╚██████╔╝
- ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
-   ┌───────────────────────────────────────────────┐
-   │               ARDUINO MANAGER                 │
-   │                                               │
-   │ select board, serial, compile, upload & more  │
-   └───────────────────────────────────────────────┘
-----------------------------------------------------------
+  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗
+  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗
+  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║
+  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║
+  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝
+  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝
+ ┌────────────────────────────────────────────────────────┐       
+ │                 ARDUINO CLI MANAGER                    │       
+ │                                                        │       
+ │ Select board, serial, compile, upload & monitor easily │       
+ └────────────────────────────────────────────────────────┘       
+───────────────────────────────────────────────────────────
  Board:    esp32:esp32:esp32 
  Port:     /dev/ttyACM1
+ Baud:        115200
  Project:  Not Selected
-----------------------------------------------------------
-1. List Installed Cores      5. Select/Create Project
-2. List All Boards           6. Compile Current Project
-3. Select Board (FQBN)       7. Upload a Project
-4. Select Port               8. Open Serial Monitor
-9. Install a Core
+───────────────────────────────────────────────────────────
+1. Select/Create Project          6. List Installed Cores
+2. Select Board (FQBN)            7. List All Boards
+3. Select Port                    8. Install a Core
+4. Compile Current Project        9. Open Serial Monitor
+5. Upload a Project
 
 0. Exit
-----------------------------------------------------------
+───────────────────────────────────────────────────────────
 Choose option: 
 ```
 

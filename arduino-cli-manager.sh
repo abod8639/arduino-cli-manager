@@ -47,35 +47,28 @@ function load_config() {
 function print_header() {
     clear
     echo ""
-    
     # Cyan-colored ASCII Art Logo
     echo -e "${C_CYAN}"
-    echo "   ██████╗ ███████╗███╗   ██╗██╗██╗   ██╗███████╗██╗   ██╗██╗███╗   ██╗ ██████╗ "
-    echo "  ██╔════╝ ██╔════╝████╗  ██║██║██║   ██║██╔════╝██║   ██║██║████╗  ██║██╔═══██╗"
-    echo "  ██║  ███╗█████╗  ██╔██╗ ██║██║██║   ██║███████╗██║   ██║██║██╔██╗ ██║██║   ██║"
-    echo "  ██║   ██║██╔══╝  ██║╚██╗██║██║██║   ██║╚════██║██║   ██║██║██║╚██╗██║██║   ██║"
-    echo "  ╚██████╔╝███████╗██║ ╚████║██║╚██████╔╝███████║╚██████╔╝██║██║ ╚████║╚██████╔╝"
-    echo "   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝ ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo "  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗ "
+    echo "  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗"
+    echo "  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║"
+    echo "  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║"
+    echo "  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝"
+    echo "  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
     echo -e "${C_RESET}"
-
-    # App Info Box
     echo -e "${C_GREEN}"
-    echo "        ┌───────────────────────────────────────────────────────────────┐       "
-    echo "        │                     ARDUINO CLI MANAGER                       │       "
-    echo "        │                                                               │       "
-    echo "        │     Select board, serial, compile, upload & monitor easily    │       "
-    echo "        └───────────────────────────────────────────────────────────────┘       "
+    echo " ┌────────────────────────────────────────────────────────┐  "
+    echo " │                 ARDUINO CLI MANAGER                    │  "
+    echo " │                                                        │  "
+    echo " │ Select board, serial, compile, upload & monitor easily │  "
+    echo " └────────────────────────────────────────────────────────┘  "
     echo -e "${C_RESET}"
-
-    # Info Summary Section
-    echo "────────────────────────────────────────────────────────────────────────────────"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}          "
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}          "
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}          "
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}    "
-    echo "────────────────────────────────────────────────────────────────────────────────"
-    echo ""
-
+    echo "───────────────────────────────────────────────────────────"
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}      "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}      "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}      "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
+    echo "───────────────────────────────────────────────────────────"
 }
 
 
@@ -521,14 +514,14 @@ function install_core() {
 function main_menu() {
     while true; do
         print_header
-        echo -e "${C_BLUE}1.${C_RESET} Select/Create Project       ${C_BLUE}6.${C_RESET} List Installed Cores"
-        echo -e "${C_BLUE}2.${C_RESET} Select Board (FQBN)         ${C_BLUE}7.${C_RESET} List All Boards"
-        echo -e "${C_BLUE}3.${C_RESET} Select Port                 ${C_BLUE}8.${C_RESET} Install a Core"
-        echo -e "${C_BLUE}4.${C_RESET} Compile Current Project     ${C_BLUE}9.${C_RESET} Open Serial Monitor"
-        echo -e "${C_BLUE}5.${C_RESET} Upload a Project"
+        echo -e " ${C_BLUE}1.${C_RESET} Select/Create Project          ${C_BLUE}6.${C_RESET} List Installed Cores"
+        echo -e " ${C_BLUE}2.${C_RESET} Select Board (FQBN)            ${C_BLUE}7.${C_RESET} List All Boards"
+        echo -e " ${C_BLUE}3.${C_RESET} Select Port                    ${C_BLUE}8.${C_RESET} Install a Core"
+        echo -e " ${C_BLUE}4.${C_RESET} Compile Current Project        ${C_BLUE}9.${C_RESET} Open Serial Monitor"
+        echo -e " ${C_BLUE}5.${C_RESET} Upload a Project"   
         echo
-        echo -e "${C_RED}0. Exit${C_RESET}"
-        echo "────────────────────────────────────────────────────────────────────────────────"
+        echo -e " ${C_RED}0. Exit${C_RESET}"
+        echo "───────────────────────────────────────────────────────────"
         read -rp "Choose option: " option
 
         case $option in
