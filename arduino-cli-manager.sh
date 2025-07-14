@@ -87,7 +87,6 @@ function press_enter_to_continue() {
     read -p "Press Enter to continue..."
 }
 
-# --- Error Handling ---
 function handle_error() {
     local command_name="$1"
     local error_message="$2"
@@ -133,7 +132,6 @@ function list_all_supported_boards() {
     press_enter_to_continue
 }
 
-# --- Helper function for fzf-based board selection ---
 function _select_board_fzf() {
     print_header
     echo -e "${C_GREEN}==> Use interactive search. ${C_YELLOW}Enter${C_RESET} to select.${C_RESET}"
@@ -154,7 +152,6 @@ function _select_board_fzf() {
     fi
 }
 
-# --- Helper function for menu-based board selection ---
 function _select_board_menu() {
     print_header
     local all_boards
@@ -206,7 +203,6 @@ function _select_board_menu() {
     done
 }
 
-# --- Main function to select a board ---
 function select_board() {
     print_header
     # Check if fzf is installed for a better experience
@@ -224,32 +220,33 @@ function select_board() {
 
 function select_port() {
     print_header
-    echo -e "${C_GREEN}==> Select a port:${C_RESET}"
+    echo -e "${C_GREEN}==> Detecting connected boards...${C_RESET}"
     
-    # Get the list of available ports
-    local ports_list
-    ports_list=$(run_arduino_cli_command board list | awk 'NR>1')
+    local board_list
+    board_list=$(run_arduino_cli_command board list | awk 'NR>1')
 
-    if [ -z "$ports_list" ]; then
+    if [ -z "$board_list" ]; then
         echo -e "${C_RED}No connected boards found. Using default port: $DEFAULT_PORT${C_RESET}"
         PORT="$DEFAULT_PORT"
         sleep 2
         return
     fi
 
-    # Use fzf for an interactive selection
+    # If multiple boards, let the user choose
+    echo -e "${C_YELLOW}Multiple boards detected. Please select one:${C_RESET}"
     local choice
-    choice=$( (echo "$ports_list"; echo "Use default ($DEFAULT_PORT)") | \
-        fzf --reverse --header="Select a port" --prompt="Port: "
+    choice=$( (echo "$board_list") | \
+        fzf --reverse --header="Select a board/port" --prompt="Selection: "
     )
 
     if [[ -n "$choice" ]]; then
-        if [[ "$choice" == "Use default ($DEFAULT_PORT)" ]]; then
-            PORT="$DEFAULT_PORT"
-        else
-            PORT=$(echo "$choice" | awk '{print $1}')
-        fi
+        PORT=$(echo "$choice" | awk '{print $1}')
+        FQBN=$(echo "$choice" | awk '{print $(NF-1)}')
         echo -e "${C_GREEN}Selected port: ${C_YELLOW}${PORT}${C_RESET}"
+        echo -e "${C_GREEN}Selected FQBN: ${C_YELLOW}${FQBN}${C_RESET}"
+        sleep 2
+    else
+        echo -e "${C_RED}No selection made.${C_RESET}"
         sleep 1
     fi
 }
@@ -257,9 +254,7 @@ function select_port() {
 function select_or_create_project() {
     print_header
 
-    # Use fzf if available for a better experience
     if command -v fzf &> /dev/null; then
-        # Use fd for faster directory searching if available
         local find_cmd
         if command -v fd &> /dev/null; then
             find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
@@ -338,11 +333,10 @@ function compile_sketch() {
         return
     fi
     echo -e "${C_GREEN}==> Compiling sketch '${PROJECT##*/}'...${C_RESET}"
-    # Execute directly to show live progress
     if ! arduino-cli compile --fqbn "${FQBN:-$DEFAULT_FQBN}" "$PROJECT"; then
         echo -e "${C_RED}Error: Compilation failed for '${PROJECT##*/}'. Please check the output above for details.${C_RESET}"
-        press_enter_to_continue # Add this here so the user can read the error before the screen clears
-        return # Exit the function on failure
+        press_enter_to_continue 
+        return 
     fi
     echo -e "${C_GREEN}Sketch '${PROJECT##*/}' compiled successfully.${C_RESET}"
     press_enter_to_continue
@@ -351,18 +345,16 @@ function compile_sketch() {
 function upload_sketch() {
     print_header
 
-    # Check if a project is already selected
     if [[ -n "$PROJECT" && "$PROJECT" != "$DEFAULT_PROJECT" ]]; then
         echo -e "${C_GREEN}==> Current project is '${C_YELLOW}${PROJECT##*/}${C_GREEN}'.${C_RESET}"
         read -rp "Upload this project? [Y/n]: " choice
-        # Default to Yes if user just presses Enter
         if [[ -z "$choice" || "$choice" =~ ^[Yy]$ ]]; then
             echo -e "${C_GREEN}==> Uploading sketch '${PROJECT##*/}'...${C_RESET}"
             run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$PROJECT" -v
             press_enter_to_continue
             return
         fi
-    }
+    fi
 
     # If no project was selected, or user said no, show the fzf selection menu
     print_header
@@ -383,7 +375,7 @@ function upload_sketch() {
     if [[ -n "$project_to_upload" ]]; then
         echo -e "${C_GREEN}==> Uploading sketch '${project_to_upload##*/}'...${C_RESET}"
         run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v
-    }
+    fi
 
     press_enter_to_continue
 }
@@ -391,60 +383,70 @@ function upload_sketch() {
 function open_serial() {
     print_header
 
-    
-local baud_rates=(
-  "300"      
-  "1200"     
-  "2400"     
-  "4800"     
-  "9600"     
-  "14400"    
-  "19200"    
-  "28800"    
-  "38400"    
-  "57600"    
-  "74880"    
-  "115200"   
-  "128000"   
-  "230400"   
-  "250000"   
-  "500000"   
-  "1000000"  
-  "2000000"  
-  "Custom"   
-)
-    
-    echo -e "${C_GREEN}==> Select a baud rate (default: ${DEFAULT_BAUD}):${C_RESET}"
-
-    if command -v fzf &>/dev/null; then
-        BAUD=$(printf "%s\n" "${baud_rates[@]}" | fzf \
-            --reverse \
-            --cycle \
-            --height=40% \
-            --prompt="Baud Rate > " \
-            --border \
-            --color=prompt:green)
+    read -rp "Use current baud rate (${BAUD:-$DEFAULT_BAUD})? [Y/n]: " use_current_baud
+    if [[ -z "$use_current_baud" || "$use_current_baud" =~ ^[Yy]$ ]]; then
+        : # No-op, baud is already set
     else
-        select choice in "${baud_rates[@]}" "Cancel"; do
-            [[ "$choice" == "Cancel" ]] && return BAUD="$choice"
-            break
-        done
-    
+        local baud_rates=(
+          "300"      
+          "1200"     
+          "2400"     
+          "4800"     
+          "9600"     
+          "14400"    
+          "19200"    
+          "28800"    
+          "38400"    
+          "57600"    
+          "74880"    
+          "115200"   
+          "128000"   
+          "230400"   
+          "250000"   
+          "500000"   
+          "1000000"  
+          "2000000"  
+          "Custom"   
+        )
+        
+        echo -e "${C_GREEN}==> Select a baud rate (default: ${DEFAULT_BAUD}):${C_RESET}"
 
-    if [[ "$BAUD" == "Custom" ]]; then
-        read -rp "Enter custom baud rate: " custom_baud
-        BAUD="${custom_baud:-$DEFAULT_BAUD}"
-        [[ -z "$custom_baud" ]] && echo -e "${C_YELLOW}No custom baud rate entered, using default: ${BAUD}${C_RESET}"
-    elif [[ -z "$BAUD" ]]; then
-        BAUD="$DEFAULT_BAUD"
-        echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
-    
+        if command -v fzf &>/dev/null; then
+            BAUD=$(printf "%s\n" "${baud_rates[@]}" | fzf \
+                --reverse \
+                --cycle \
+                --height=40% \
+                --prompt="Baud Rate > " \
+                --border \
+                --color=prompt:green)
+        else
+            select choice in "${baud_rates[@]}" "Cancel"; do
+                if [[ "$choice" == "Cancel" ]]; then
+                    return
+                fi
+                BAUD="$choice"
+                break
+            done
+        fi
+
+        if [[ "$BAUD" == "Custom" ]]; then
+            read -rp "Enter custom baud rate: " custom_baud
+            BAUD="${custom_baud:-$DEFAULT_BAUD}"
+            [[ -z "$custom_baud" ]] && echo -e "${C_YELLOW}No custom baud rate entered, using default: ${BAUD}${C_RESET}"
+        elif [[ -z "$BAUD" ]]; then
+            BAUD="$DEFAULT_BAUD"
+            echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
+        fi
+    fi
 
     echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT} at ${BAUD} baud...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
     sleep 1
 
-    run_arduino_cli_command monitor -p "${PORT:-$DEFAULT_PORT}" --config "baudrate=${BAUD}"
+    # Execute monitor directly for interactive session
+    arduino-cli monitor -p "${PORT:-$DEFAULT_PORT}" --config "baudrate=${BAUD}"
+    
+    echo # Add a newline for better formatting after monitor exits
     press_enter_to_continue
 }
 
@@ -504,7 +506,7 @@ function install_core() {
                 echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
             fi
         done
-    }
+    fi
 
     if [[ -n "$core_name" ]]; then
         echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
@@ -518,7 +520,7 @@ function install_core() {
     else
         echo -e "${C_RED}No core selected or entered.${C_RESET}"
         sleep 1
-    
+    fi
     press_enter_to_continue
 }
 
