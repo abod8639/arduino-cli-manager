@@ -1,8 +1,25 @@
 # Arduino CLI Manager
 
+![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 `arduino-cli-manager` is a powerful and user-friendly interactive shell script designed to streamline your Arduino development workflow. It wraps the `arduino-cli` in a colorful, intuitive terminal interface, making it easy to manage boards, ports, and projects without memorizing complex commands.
 
 This script is perfect for developers who prefer working in the terminal and want a more efficient way to compile, upload, and monitor their Arduino sketches.
+
+## Table of Contents
+
+- [Key Features](#key-features)
+- [Installation](#installation)
+  - [Step 1: `arduino-cli`](#step-1-arduino-cli)
+  - [Step 2: Board Cores](#step-2-board-cores)
+  - [Step 3: `fzf` (Highly Recommended)](#step-3-fzf-highly-recommended)
+- [How to Use](#how-to-use)
+  - [Linux and macOS](#linux-and-macos)
+  - [Windows](#windows)
+  - [The Main Menu](#the-main-menu)
+  - [Menu Options Explained](#menu-options-explained)
+- [Configuration](#configuration)
 
 ## Key Features
 
@@ -17,13 +34,32 @@ This script is perfect for developers who prefer working in the terminal and wan
 - **Create Projects on the Fly**: An integrated option to create a new, properly structured Arduino sketch directly from the project selection menu.
 - **Self-Contained & Portable**: A single script with no complex dependencies other than `arduino-cli`.
 
+## Get the Tool
+
+You can download or clone the `arduino-cli-manager` from its GitHub repository:
+
+[https://github.com/abod8639/arduino-cli-manager](https://github.com/abod8639/arduino-cli-manager)
+
+To get started, simply clone the repository:
+
+```bash
+git clone https://github.com/abod8639/arduino-cli-manager.git
+cd arduino-cli-manager
+```
+
+For detailed instructions on how to install dependencies and use the tool, please refer to the [Installation](#installation) and [How to Use](#how-to-use) sections below.
+
 ## Installation
 
 ### Step 1: `arduino-cli`
 
-First, ensure you have `arduino-cli` installed and configured on your system. Follow the official installation guide:
+First, ensure you have `arduino-cli` installed and configured on your system. For detailed installation instructions for your operating system, please refer to the [official Arduino CLI installation guide](https://arduino.github.io/arduino-cli/latest/installation/).
 
-[https://arduino.github.io/arduino-cli/latest/installation/](https://arduino.github.io/arduino-cli/latest/installation/)
+After installing `arduino-cli`, initialize it and update the core index:
+```bash
+arduino-cli config init
+arduino-cli core update-index
+```
 
 ### Step 2: Board Cores
 
@@ -47,29 +83,46 @@ For the best experience, install the command-line fuzzy finder `fzf`. The script
   ```bash
   brew install fzf
   ```
+- **On Arch Linux:**
+  ```bash
+  sudo pacman -S fzf
+  ```
 
 ## How to Use
 
-1.  Make the script executable:
+`arduino-cli-manager` is a shell script designed for Unix-like environments (Linux, macOS, WSL/Git Bash on Windows).
+
+1.  **Get the Script:** If you haven't already, clone the repository:
+    ```bash
+    git clone https://github.com/abod8639/arduino-cli-manager.git
+    cd arduino-cli-manager
+    ```
+2.  **Make Executable:** Give execute permissions to the script:
     ```bash
     chmod +x arduino-cli-manager.sh
     ```
-2.  Run the script:
+3.  **Run the Script:** Execute the script from its directory:
     ```bash
     ./arduino-cli-manager.sh
     ```
+    *Tip: For convenience, you can move the script to a directory in your system's PATH (e.g., `/usr/local/bin`) to run it from any location. For example: `sudo mv arduino-cli-manager.sh /usr/local/bin/arduino-manager`.*
 
 ### The Main Menu
 
 You will be greeted by the main menu, which always displays your current settings at the top.
 
 ```
-    ___    __    ____  _  _  ____  ____  _  _  ___ 
-   / __)  /__\\  (  _ \( \/ )( ___)(  _ \( \/ )/ __)
-  ( (__  /(__)\  )   / \  /  )__)  )   / \  / \__ \ 
-   \___)(__)(__)(_)\_)  \/  (____)(_)\_)  \/  (___/
-
-            A r d u i n o  -  M a n a g e r
+  █████╗ ██████╗ ██████╗ ██╗   ██╗██╗███╗   ██╗ ██████╗ 
+ ██╔══██╗██╔══██╗██╔══██╗██║   ██║██║████╗  ██║██╔════╝ 
+ ███████║██████╔╝██████╔╝██║   ██║██║██╔██╗ ██║██║  ███╗
+ ██╔══██║██╔═══╝ ██╔═══╝ ██║   ██║██║██║╚██╗██║██║   ██║
+ ██║  ██║██║     ██║     ╚██████╔╝██║██║ ╚████║╚██████╔╝
+ ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+   ┌───────────────────────────────────────────────┐
+   │               ARDUINO MANAGER                 │
+   │                                               │
+   │ select board, serial, compile, upload & more  │
+   └───────────────────────────────────────────────┘
 ----------------------------------------------------------
  Board:    esp32:esp32:esp32 
  Port:     /dev/ttyACM1
@@ -79,8 +132,9 @@ You will be greeted by the main menu, which always displays your current setting
 2. List All Boards           6. Compile Current Project
 3. Select Board (FQBN)       7. Upload a Project
 4. Select Port               8. Open Serial Monitor
+9. Install a Core
 
-9. Exit
+0. Exit
 ----------------------------------------------------------
 Choose option: 
 ```

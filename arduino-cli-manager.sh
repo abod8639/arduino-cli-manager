@@ -5,8 +5,10 @@
 # --- Configuration ---
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
+DEFAULT_BAUD="115200"
 DEFAULT_PROJECT="Not Selected"
 SKETCH_DIR="$HOME/Arduino"
+
 
 # --- Colors ---
 C_RESET='\033[0m'
@@ -20,6 +22,7 @@ C_CYAN='\033[0;36m'
 # --- State Variables ---
 FQBN=""
 PORT=""
+BAUD=""
 PROJECT=""
 
 # --- UI Functions ---
@@ -42,10 +45,11 @@ function print_header() {
     echo "     │ select board, serial, compile, upload & more  │"
     echo "     └───────────────────────────────────────────────┘"
     echo -e "${C_GREEN}"
-    echo "----------------------------------------------------------"
+    echo -e "${C_RESET}----------------------------------------------------------"
     echo -e " ${C_YELLOW}Board:${C_RESET}    ${FQBN:-$DEFAULT_FQBN} "
     echo -e " ${C_YELLOW}Port:${C_RESET}     ${PORT:-$DEFAULT_PORT}"
-    echo -e " ${C_YELLOW}Project:${C_RESET}  ${PROJECT##*/:-$DEFAULT_PROJECT}"
+    echo -e " ${C_YELLOW}Baud:${C_RESET}     ${BAUD:-$DEFAULT_BAUD}"
+    echo -e " ${C_YELLOW}Project:${C_RESET}  ${PROJECT:-$DEFAULT_PROJECT}"
     echo "----------------------------------------------------------"
 }
 
@@ -58,7 +62,7 @@ function handle_error() {
     local command_name="$1"
     local error_message="$2"
     echo -e "${C_RED}Error during $command_name: ${error_message}${C_RESET}"
-    press_enter_to_continue
+    # press_enter_to_continue
 }
 
 function run_arduino_cli_command() {
@@ -102,10 +106,12 @@ function list_all_supported_boards() {
 # --- Helper function for fzf-based board selection ---
 function _select_board_fzf() {
     print_header
-    echo -e "${C_GREEN}==> Use the interactive search to find and select a board.${C_RESET}"
+    echo -e "${C_GREEN}==> Use interactive search. ${C_YELLOW}Enter${C_RESET} to select.${C_RESET}"
     local choice
     # Use fzf for an interactive filter
-    choice=$(run_arduino_cli_command board listall | sed '1d' | fzf --height 40% --reverse --prompt="Select a board: ")
+    choice=$(run_arduino_cli_command board listall | sed '1d' | \
+        fzf --reverse --prompt="Select a board: " \
+            --header "Enter to select." )
     
     if [[ -n "$choice" ]]; then
         # Robustly extract FQBN by looking for the pattern vendor:arch:board
@@ -120,6 +126,7 @@ function _select_board_fzf() {
 
 # --- Helper function for menu-based board selection ---
 function _select_board_menu() {
+    print_header
     local all_boards
     mapfile -t all_boards < <(run_arduino_cli_command board listall | sed '1d') # Pre-load all boards, remove header
 
@@ -171,6 +178,7 @@ function _select_board_menu() {
 
 # --- Main function to select a board ---
 function select_board() {
+    print_header
     # Check if fzf is installed for a better experience
     if command -v fzf &> /dev/null; then
         _select_board_fzf
@@ -187,26 +195,33 @@ function select_board() {
 function select_port() {
     print_header
     echo -e "${C_GREEN}==> Select a port:${C_RESET}"
-    mapfile -t ports < <(run_arduino_cli_command board list | awk 'NR>1')
+    
+    # Get the list of available ports
+    local ports_list
+    ports_list=$(run_arduino_cli_command board list | awk 'NR>1')
 
-    if [ ${#ports[@]} -eq 0 ]; then
+    if [ -z "$ports_list" ]; then
         echo -e "${C_RED}No connected boards found. Using default port: $DEFAULT_PORT${C_RESET}"
         PORT="$DEFAULT_PORT"
         sleep 2
         return
     fi
 
-    select choice in "${ports[@]}" "Use default ($DEFAULT_PORT)"; do
+    # Use fzf for an interactive selection
+    local choice
+    choice=$( (echo "$ports_list"; echo "Use default ($DEFAULT_PORT)") | \
+        fzf --reverse --header="Select a port" --prompt="Port: "
+    )
+
+    if [[ -n "$choice" ]]; then
         if [[ "$choice" == "Use default ($DEFAULT_PORT)" ]]; then
             PORT="$DEFAULT_PORT"
-            break
-        elif [[ -n "$choice" ]]; then
-            PORT=$(echo "$choice" | awk '{print $1}')
-            break
         else
-            echo -e "${C_RED}Invalid selection.${C_RESET}"
+            PORT=$(echo "$choice" | awk '{print $1}')
         fi
-    done
+        echo -e "${C_GREEN}Selected port: ${C_YELLOW}${PORT}${C_RESET}"
+        sleep 1
+    fi
 }
 
 function select_or_create_project() {
@@ -214,20 +229,34 @@ function select_or_create_project() {
 
     # Use fzf if available for a better experience
     if command -v fzf &> /dev/null; then
-        # Get a list of all project directories
-        local projects=()
-        while IFS= read -r line; do
-            projects+=("$line")
-        done < <(find "$SKETCH_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n')
+        # Use fd for faster directory searching if available
+        local find_cmd
+        if command -v fd &> /dev/null; then
+            find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
+        else
+            find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
+        fi
 
-        # Add a static option to create a new project
-        projects+=("--- CREATE NEW PROJECT ---")
+        local projects
+        projects=$(eval "$find_cmd")
 
         local choice
-        choice=$(printf '%s\n' "${projects[@]}" | fzf --height 40% --reverse --prompt="Select a project or create a new one: ")
+        choice=$( (echo "--- CREATE NEW PROJECT ---"; echo "$projects") | \
+            fzf --reverse --prompt="Select or create a project: " \
+                --header "Enter: select, Ctrl-D: delete project" \
+                --bind "ctrl-d:execute(\
+                    if [ {} != '--- CREATE NEW PROJECT ---' ]; then\
+                        read -p \"Delete project {/}? This is irreversible. [y/N] \" -n 1 -r; echo;\
+                        if [[ \$REPLY =~ ^[Yy]$ ]]; then\
+                            rm -rf \"{}\" && echo 'Project deleted.' || echo 'Failed to delete.'\
+                            sleep 1;\
+                        fi\
+                    fi\
+                )+reload( (echo \"--- CREATE NEW PROJECT ---\"; eval \"$find_cmd\") )"
+        )
 
         if [[ -z "$choice" ]]; then
-            return # User pressed Esc, so do nothing
+            return # User pressed Esc
         elif [[ "$choice" == "--- CREATE NEW PROJECT ---" ]]; then
             read -rp "Enter new sketch name: " name
             if [[ -n "$name" ]]; then
@@ -235,7 +264,7 @@ function select_or_create_project() {
                 PROJECT="$SKETCH_DIR/$name"
             fi
         else
-            PROJECT="$SKETCH_DIR/$choice"
+            PROJECT="$choice"
         fi
     else
         # Fallback to the original menu if fzf is not installed
@@ -279,7 +308,13 @@ function compile_sketch() {
         return
     fi
     echo -e "${C_GREEN}==> Compiling sketch '${PROJECT##*/}'...${C_RESET}"
-    run_arduino_cli_command compile --fqbn "${FQBN:-$DEFAULT_FQBN}" "$PROJECT"
+    # Execute directly to show live progress
+    if ! arduino-cli compile --fqbn "${FQBN:-$DEFAULT_FQBN}" "$PROJECT"; then
+        echo -e "${C_RED}Error: Compilation failed for '${PROJECT##*/}'. Please check the output above for details.${C_RESET}"
+        press_enter_to_continue # Add this here so the user can read the error before the screen clears
+        return # Exit the function on failure
+    fi
+    echo -e "${C_GREEN}Sketch '${PROJECT##*/}' compiled successfully.${C_RESET}"
     press_enter_to_continue
 }
 
@@ -299,54 +334,127 @@ function upload_sketch() {
         fi
     fi
 
-    # If no project was selected, or user said no, show the selection menu
-    print_header # Clear the previous question
-    echo -e "${C_GREEN}==> Select a project to upload from $SKETCH_DIR:${C_RESET}"
-    
-    local current_dir
-    current_dir=$(pwd)
-    cd "$SKETCH_DIR" || return
+    # If no project was selected, or user said no, show the fzf selection menu
+    print_header
+    echo -e "${C_GREEN}==> Select a project to upload:${C_RESET}"
 
-    select project_dir in */ "Cancel"; do
-        if [[ "$project_dir" == "Cancel" ]]; then
-            break # Exit select loop
-        elif [[ -n "$project_dir" ]]; then
-            local project_path="$SKETCH_DIR/${project_dir%/}"
-            echo -e "${C_GREEN}==> Uploading sketch '${project_dir%/}'...${C_RESET}"
-            run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_path" -v
-            break # Exit select loop
-        else
-            echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
-        fi
-    done
+    local find_cmd
+    if command -v fd &> /dev/null; then
+        find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
+    else
+        find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
+    fi
 
-    cd "$current_dir"
+    local project_to_upload
+    project_to_upload=$(eval "$find_cmd" | \
+        fzf --reverse --prompt="Select project to upload: "
+    )
+
+    if [[ -n "$project_to_upload" ]]; then
+        echo -e "${C_GREEN}==> Uploading sketch '${project_to_upload##*/}'...${C_RESET}"
+        run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v
+    fi
+
     press_enter_to_continue
 }
 
 function open_serial() {
     print_header
-    echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT}...${C_RESET}"
+
+    
+local baud_rates=(
+  "300"      
+  "1200"     
+  "2400"     
+  "4800"     
+  "9600"     
+  "14400"    
+  "19200"    
+  "28800"    
+  "38400"    
+  "57600"    
+  "74880"    
+  "115200"   
+  "128000"   
+  "230400"   
+  "250000"   
+  "500000"   
+  "1000000"  
+  "2000000"  
+  "Custom"   
+)
+    
+    echo -e "${C_GREEN}==> Select a baud rate (default: ${DEFAULT_BAUD}):${C_RESET}"
+
+    if command -v fzf &>/dev/null; then
+        BAUD=$(printf "%s\n" "${baud_rates[@]}" | fzf \
+            --reverse \
+            --cycle \
+            --height=40% \
+            --prompt="Baud Rate > " \
+            --border \
+            --color=prompt:green)
+    else
+        select choice in "${baud_rates[@]}" "Cancel"; do
+            [[ "$choice" == "Cancel" ]] && return BAUD="$choice"
+            break
+        done
+    fi
+
+    if [[ "$BAUD" == "Custom" ]]; then
+        read -rp "Enter custom baud rate: " custom_baud
+        BAUD="${custom_baud:-$DEFAULT_BAUD}"
+        [[ -z "$custom_baud" ]] && echo -e "${C_YELLOW}No custom baud rate entered, using default: ${BAUD}${C_RESET}"
+    elif [[ -z "$BAUD" ]]; then
+        BAUD="$DEFAULT_BAUD"
+        echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
+    fi
+
+    echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT} at ${BAUD} baud...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
     sleep 1
-    run_arduino_cli_command monitor -p "${PORT:-$DEFAULT_PORT}" --config 115200
+
+    run_arduino_cli_command monitor -p "${PORT:-$DEFAULT_PORT}" --config "baudrate=${BAUD}"
     press_enter_to_continue
 }
 
+
 function install_core() {
     print_header
-    echo -e "${C_GREEN}==> Install a new core${C_RESET}"
     local core_name=""
 
     # Check if fzf is installed for a better experience
     if command -v fzf &> /dev/null; then
-        echo -e "${C_GREEN}==> Use the interactive search to find and select a core.${C_RESET}"
-        local choice
-        choice=$(run_arduino_cli_command core search --all | sed '1d' | fzf --height 40% --reverse --prompt="Select a core: ")
-        
-        if [[ -n "$choice" ]]; then
-            core_name=$(echo "$choice" | awk '{print $1}')
+        echo -e "${C_GREEN}==> Use interactive search to find and select cores.${C_RESET}"
+        echo -e "${C_YELLOW}Use TAB to multi-select. Enter to install.${C_RESET}"
+
+        local installed_cores
+        installed_cores=$(run_arduino_cli_command core list | awk 'NR>1 {print $1}')
+
+        local choices
+        choices=$(run_arduino_cli_command core search --all | sed '1d' | \
+            fzf --reverse --prompt="Select core(s) to install: " -m \
+                --header "TAB to multi-select, Enter to install."
+        )
+
+        if [[ -n "$choices" ]]; then
+            echo "$choices" | while read -r choice; do
+                core_name=$(echo "$choice" | awk '{print $1}')
+                if [[ -n "$core_name" ]]; then
+                    echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
+                    if ! arduino-cli core install "$core_name"; then
+                        echo -e "${C_RED}Error: Core installation failed for '$core_name'.${C_RESET}"
+                    else
+                        echo -e "${C_GREEN}Core '$core_name' installed successfully.${C_RESET}"
+                    fi
+                fi
+            done
+        else
+            echo -e "${C_RED}No core selected.${C_RESET}"
+            sleep 1
         fi
+        press_enter_to_continue
+        return
     else
         # Fallback to menu if fzf is not installed
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
@@ -370,7 +478,13 @@ function install_core() {
 
     if [[ -n "$core_name" ]]; then
         echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
-        run_arduino_cli_command core install "$core_name"
+        # Execute directly to show live progress
+        if ! arduino-cli core install "$core_name"; then
+            echo -e "${C_RED}Error: Core installation failed for '$core_name'. Please check the output above for details.${C_RESET}"
+            press_enter_to_continue # Add this here so the user can read the error before the screen clears
+            return # Exit the function on failure
+        fi
+        echo -e "${C_GREEN}Core '$core_name' installed successfully.${C_RESET}"
     else
         echo -e "${C_RED}No core selected or entered.${C_RESET}"
         sleep 1
@@ -381,26 +495,26 @@ function install_core() {
 function main_menu() {
     while true; do
         print_header
-        echo -e "${C_BLUE}1.${C_RESET} List Installed Cores      ${C_BLUE}5.${C_RESET} Select/Create Project"
-        echo -e "${C_BLUE}2.${C_RESET} List All Boards           ${C_BLUE}6.${C_RESET} Compile Current Project"
-        echo -e "${C_BLUE}3.${C_RESET} Select Board (FQBN)       ${C_BLUE}7.${C_RESET} Upload a Project"
-        echo -e "${C_BLUE}4.${C_RESET} Select Port               ${C_BLUE}8.${C_RESET} Open Serial Monitor"
-        echo -e "${C_BLUE}9.${C_RESET} Install a Core"
+        echo -e "${C_BLUE}1.${C_RESET} Select/Create Project       ${C_BLUE}6.${C_RESET} List Installed Cores"
+        echo -e "${C_BLUE}2.${C_RESET} Select Board (FQBN)         ${C_BLUE}7.${C_RESET} List All Boards"
+        echo -e "${C_BLUE}3.${C_RESET} Select Port                 ${C_BLUE}8.${C_RESET} Install a Core"
+        echo -e "${C_BLUE}4.${C_RESET} Compile Current Project     ${C_BLUE}9.${C_RESET} Open Serial Monitor"
+        echo -e "${C_BLUE}5.${C_RESET} Upload a Project"
         echo
         echo -e "${C_RED}0. Exit${C_RESET}"
         echo "----------------------------------------------------------"
         read -rp "Choose option: " option
 
         case $option in
-        1) list_installed_boards ;;
-        2) list_all_supported_boards ;;
-        3) select_board ;;
-        4) select_port ;;
-        5) select_or_create_project ;;
-        6) compile_sketch ;;
-        7) upload_sketch ;;
-        8) open_serial ;;
-        9) install_core ;;
+        1) select_or_create_project ;;
+        2) select_board ;;
+        3) select_port ;;
+        4) compile_sketch ;;
+        5) upload_sketch ;;
+        6) list_installed_boards ;;
+        7) list_all_supported_boards ;;
+        8) install_core ;;
+        9) open_serial ;;
         0) clear; echo "Goodbye!"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
