@@ -429,7 +429,7 @@ local baud_rates=(
             [[ "$choice" == "Cancel" ]] && return BAUD="$choice"
             break
         done
-    }
+    
 
     if [[ "$BAUD" == "Custom" ]]; then
         read -rp "Enter custom baud rate: " custom_baud
@@ -438,7 +438,7 @@ local baud_rates=(
     elif [[ -z "$BAUD" ]]; then
         BAUD="$DEFAULT_BAUD"
         echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
-    }
+    
 
     echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT} at ${BAUD} baud...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
@@ -518,7 +518,7 @@ function install_core() {
     else
         echo -e "${C_RED}No core selected or entered.${C_RESET}"
         sleep 1
-    }
+    
     press_enter_to_continue
 }
 
