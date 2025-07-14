@@ -126,7 +126,7 @@ You will be greeted by the main menu, which always displays your current setting
 ───────────────────────────────────────────────────────────
  Board:    esp32:esp32:esp32 
  Port:     /dev/ttyACM1
- Baud:        115200
+ Baud:     115200
  Project:  Not Selected
 ───────────────────────────────────────────────────────────
 1. Select/Create Project          6. List Installed Cores

@@ -26,6 +26,17 @@ PORT=""
 BAUD=""
 PROJECT=""
 
+# --- Dependency Check ---
+function check_dependencies() {
+    if ! command -v arduino-cli &> /dev/null; then
+        echo -e "${C_RED}Error: 'arduino-cli' is not installed or not in your PATH.${C_RESET}"
+        echo "Please install it to use this script."
+        echo "Installation instructions can be found at:"
+        echo -e "${C_YELLOW}https://arduino.github.io/arduino-cli/latest/installation/${C_RESET}"
+        exit 1
+    fi
+}
+
 # --- Config Functions ---
 function save_config() {
     # Save current settings to the config file
@@ -351,7 +362,7 @@ function upload_sketch() {
             press_enter_to_continue
             return
         fi
-    fi
+    }
 
     # If no project was selected, or user said no, show the fzf selection menu
     print_header
@@ -372,7 +383,7 @@ function upload_sketch() {
     if [[ -n "$project_to_upload" ]]; then
         echo -e "${C_GREEN}==> Uploading sketch '${project_to_upload##*/}'...${C_RESET}"
         run_arduino_cli_command upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v
-    fi
+    }
 
     press_enter_to_continue
 }
@@ -418,7 +429,7 @@ local baud_rates=(
             [[ "$choice" == "Cancel" ]] && return BAUD="$choice"
             break
         done
-    fi
+    }
 
     if [[ "$BAUD" == "Custom" ]]; then
         read -rp "Enter custom baud rate: " custom_baud
@@ -427,7 +438,7 @@ local baud_rates=(
     elif [[ -z "$BAUD" ]]; then
         BAUD="$DEFAULT_BAUD"
         echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
-    fi
+    }
 
     echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT} at ${BAUD} baud...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
@@ -493,7 +504,7 @@ function install_core() {
                 echo -e "${C_RED}Invalid selection. Please try again.${C_RESET}"
             fi
         done
-    fi
+    }
 
     if [[ -n "$core_name" ]]; then
         echo -e "${C_GREEN}==> Installing '$core_name'...${C_RESET}"
@@ -507,7 +518,7 @@ function install_core() {
     else
         echo -e "${C_RED}No core selected or entered.${C_RESET}"
         sleep 1
-    fi
+    }
     press_enter_to_continue
 }
 
@@ -541,6 +552,7 @@ function main_menu() {
 }
 
 # --- Initialization ---
+check_dependencies
 mkdir -p "$SKETCH_DIR"
 
 # Load config and save on exit
