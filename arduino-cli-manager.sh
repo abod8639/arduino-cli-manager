@@ -8,6 +8,7 @@ DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
 DEFAULT_PROJECT="Not Selected"
 SKETCH_DIR="$HOME/Arduino"
+CONFIG_FILE="$HOME/.arduino-cli-manager.conf"
 
 
 # --- Colors ---
@@ -25,33 +26,58 @@ PORT=""
 BAUD=""
 PROJECT=""
 
+# --- Config Functions ---
+function save_config() {
+    # Save current settings to the config file
+    echo "# Arduino CLI Manager Configuration" > "$CONFIG_FILE"
+    echo "FQBN='${FQBN:-$DEFAULT_FQBN}'" >> "$CONFIG_FILE"
+    echo "PORT='${PORT:-$DEFAULT_PORT}'" >> "$CONFIG_FILE"
+    echo "BAUD='${BAUD:-$DEFAULT_BAUD}'" >> "$CONFIG_FILE"
+}
+
+function load_config() {
+    # Load settings from the config file if it exists
+    if [ -f "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE"
+    fi
+}
+
 # --- UI Functions ---
 
 function print_header() {
     clear
     echo ""
+    
+    # Cyan-colored ASCII Art Logo
     echo -e "${C_CYAN}"
-    echo "  █████╗ ██████╗ ██████╗ ██╗   ██╗██╗███╗   ██╗ ██████╗ "
-    echo " ██╔══██╗██╔══██╗██╔══██╗██║   ██║██║████╗  ██║██╔════╝ "
-    echo " ███████║██████╔╝██████╔╝██║   ██║██║██╔██╗ ██║██║  ███╗"
-    echo " ██╔══██║██╔═══╝ ██╔═══╝ ██║   ██║██║██║╚██╗██║██║   ██║"
-    echo " ██║  ██║██║     ██║     ╚██████╔╝██║██║ ╚████║╚██████╔╝"
-    echo " ╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
-    echo -e "${C_CYAN}"
+    echo "   ██████╗ ███████╗███╗   ██╗██╗██╗   ██╗███████╗██╗   ██╗██╗███╗   ██╗ ██████╗ "
+    echo "  ██╔════╝ ██╔════╝████╗  ██║██║██║   ██║██╔════╝██║   ██║██║████╗  ██║██╔═══██╗"
+    echo "  ██║  ███╗█████╗  ██╔██╗ ██║██║██║   ██║███████╗██║   ██║██║██╔██╗ ██║██║   ██║"
+    echo "  ██║   ██║██╔══╝  ██║╚██╗██║██║██║   ██║╚════██║██║   ██║██║██║╚██╗██║██║   ██║"
+    echo "  ╚██████╔╝███████╗██║ ╚████║██║╚██████╔╝███████║╚██████╔╝██║██║ ╚████║╚██████╔╝"
+    echo "   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝ ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo -e "${C_RESET}"
+
+    # App Info Box
     echo -e "${C_GREEN}"
-    echo "     ┌───────────────────────────────────────────────┐"
-    echo "     │               ARDUINO MANAGER                 │"
-    echo "     │                                               │"
-    echo "     │ select board, serial, compile, upload & more  │"
-    echo "     └───────────────────────────────────────────────┘"
-    echo -e "${C_GREEN}"
-    echo -e "${C_RESET}----------------------------------------------------------"
-    echo -e " ${C_YELLOW}Board:${C_RESET}    ${FQBN:-$DEFAULT_FQBN} "
-    echo -e " ${C_YELLOW}Port:${C_RESET}     ${PORT:-$DEFAULT_PORT}"
-    echo -e " ${C_YELLOW}Baud:${C_RESET}     ${BAUD:-$DEFAULT_BAUD}"
-    echo -e " ${C_YELLOW}Project:${C_RESET}  ${PROJECT:-$DEFAULT_PROJECT}"
-    echo "----------------------------------------------------------"
+    echo "        ┌───────────────────────────────────────────────────────────────┐       "
+    echo "        │                     ARDUINO CLI MANAGER                       │       "
+    echo "        │                                                               │       "
+    echo "        │     Select board, serial, compile, upload & monitor easily    │       "
+    echo "        └───────────────────────────────────────────────────────────────┘       "
+    echo -e "${C_RESET}"
+
+    # Info Summary Section
+    echo "────────────────────────────────────────────────────────────────────────────────"
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}          "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}          "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}          "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}    "
+    echo "────────────────────────────────────────────────────────────────────────────────"
+    echo ""
+
 }
+
 
 function press_enter_to_continue() {
     read -p "Press Enter to continue..."
@@ -502,7 +528,7 @@ function main_menu() {
         echo -e "${C_BLUE}5.${C_RESET} Upload a Project"
         echo
         echo -e "${C_RED}0. Exit${C_RESET}"
-        echo "----------------------------------------------------------"
+        echo "────────────────────────────────────────────────────────────────────────────────"
         read -rp "Choose option: " option
 
         case $option in
@@ -523,4 +549,9 @@ function main_menu() {
 
 # --- Initialization ---
 mkdir -p "$SKETCH_DIR"
+
+# Load config and save on exit
+load_config
+trap save_config EXIT
+
 main_menu
