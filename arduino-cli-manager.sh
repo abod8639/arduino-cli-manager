@@ -26,6 +26,7 @@ FQBN=""
 PORT=""
 BAUD=""
 PROJECT=""
+LATEST_VERSION=""
 
 # --- Dependency Check ---
 function check_dependencies() {
@@ -64,28 +65,38 @@ function load_config() {
 function print_header() {
     clear
     echo ""
-    # Cyan-colored ASCII Art Logo
-    echo -e "${C_CYAN}"
-    echo "  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗ "
-    echo "  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗"
-    echo "  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║"
-    echo "  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║"
-    echo "  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝"
-    echo "  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ "
-    echo -e "${C_RESET}"
-    echo -e "${C_GREEN}"
-    echo " ┌────────────────────────────────────────────────────────┐  "
-    echo " │                 ARDUINO CLI MANAGER                    │  "
-    echo -e " │${C_YELLOW}                        V$VERSION                          ${C_GREEN}│  "
-    echo " │ Select board, serial, compile, upload & monitor easily │  "
-    echo " └────────────────────────────────────────────────────────┘  "
-    echo -e "${C_RESET}"
+    echo -e "${C_CYAN}  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗ "
+                echo "  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗ "
+                echo "  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║"
+                echo "  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║"
+                echo "  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝"
+             echo -e "  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ${C_RESET}"
+    echo -e "${C_GREEN} ┌────────────────────────────────────────────────────────┐"
+                 echo " │                 ARDUINO CLI MANAGER                    │"
+                 echo " │                                                        │"
+                 echo " │ Select board, serial, compile, upload & monitor easily │"
+              echo -e " └────────────────────────────────────────────────────────┘${C_RESET}"
+             get_version_line
     echo "───────────────────────────────────────────────────────────"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}      "
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}      "
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}      "
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
+    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}"
     printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
     echo "───────────────────────────────────────────────────────────"
+}
+
+
+get_version_line() {
+    local current="${VERSION#v}"
+    local latest="${LATEST_VERSION#v}"
+
+    if [[ -n "$LATEST_VERSION" && "$(vercmp "$latest" "$current")" -gt 0 ]]; then
+        local update_msg="Update available: v$VERSION → v$LATEST_VERSION"
+        printf " ${C_YELLOW}%*s${C_RESET}${C_GREEN}%*s \n" $(( (59 + ${#update_msg}) / 2 )) "$update_msg" $(( (59 - ${#update_msg}) / 2 )) ""
+    else
+        local version_msg="v$VERSION"
+        printf "${C_GREEN} %*s%*s \n${C_RESET}" $(( (59 + ${#version_msg}) / 2 )) "$version_msg" $(( (59 - ${#version_msg}) / 2 )) ""
+    fi
 }
 
 function press_enter_to_continue() {
@@ -460,35 +471,12 @@ function check_for_update() {
     fi
 
     local repo="abod8639/arduino-cli-manager"
-    local latest_version
     local response
 
-    # Fetch the latest release data from GitHub API
     response=$(curl -s "https://api.github.com/repos/$repo/releases/latest")
 
-    # Check if the response contains a tag_name
     if echo "$response" | jq -e '.tag_name' > /dev/null; then
-        latest_version=$(echo "$response" | jq -r '.tag_name' | sed 's/v//') # Remove 'v' prefix if it exists
-    else
-        # If no release is found, don't show an error, just exit silently.
-        return
-    fi
-
-
-    # Compare versions
-    if [[ "$latest_version" != "$VERSION" && -n "$latest_version" ]]; then
-        print_header
-        echo -e "${C_GREEN}==> Update Available! ${C_RESET}"
-        echo -e "A new version (${C_YELLOW}v$latest_version${C_RESET}) of the script is available."
-        echo -e "Your current version is ${C_YELLOW}v$VERSION${C_RESET}."
-        echo
-        echo -e "You can download the latest version from:"
-        echo -e "${C_CYAN}https://github.com/$repo/releases/latest${C_RESET}"
-        echo
-        echo -e "Or run this command to update:"
-        echo -e "${C_YELLOW}curl -sL https://raw.githubusercontent.com/$repo/main/arduino-cli-manager.sh -o arduino-cli-manager.sh && chmod +x arduino-cli-manager.sh${C_RESET}"
-        echo
-        press_enter_to_continue
+        LATEST_VERSION=$(echo "$response" | jq -r '.tag_name' | sed 's/v//') # Remove 'v' prefix if it exists
     fi
 }
 
@@ -498,6 +486,35 @@ function list_installed_cores() {
     run_arduino_cli_command core list
     echo
     press_enter_to_continue
+}
+
+function update_script() {
+    print_header
+    if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
+        echo -e "${C_GREEN}==> Update Available! ${C_RESET}"
+        echo -e "A new version (${C_YELLOW}v$LATEST_VERSION${C_RESET}) of the script is available."
+        echo -e "Your current version is ${C_YELLOW}v$VERSION${C_RESET}."
+        echo
+        read -rp "Do you want to update now? [Y/n]: " update_choice
+        if [[ -z "$update_choice" || "$update_choice" =~ ^[Yy]$ ]]; then
+            echo -e "${C_GREEN}==> Updating script...${C_RESET}"
+            local repo="abod8639/arduino-cli-manager"
+            # Use $0 to refer to the script itself, making it self-updating
+            if curl -sL "https://raw.githubusercontent.com/$repo/main/arduino-cli-manager.sh" -o "$0" && chmod +x "$0"; then
+                echo -e "${C_GREEN}Update successful! Please restart the script to use the new version.${C_RESET}"
+                exit 0
+            else
+                echo -e "${C_RED}Error: Update failed. Please try again later or update manually.${C_RESET}"
+                press_enter_to_continue
+            fi
+        else
+            echo "Update skipped."
+            press_enter_to_continue
+        fi
+    else
+        echo -e "${C_GREEN}You are already on the latest version (v$VERSION).${C_RESET}"
+        press_enter_to_continue
+    fi
 }
 
 
@@ -582,7 +599,10 @@ function main_menu() {
         echo -e " ${C_BLUE}3.${C_RESET} Select Port                    ${C_BLUE}8.${C_RESET} Install a Core"
         echo -e " ${C_BLUE}4.${C_RESET} Compile Current Project        ${C_BLUE}9.${C_RESET} Open Serial Monitor"
         echo -e " ${C_BLUE}5.${C_RESET} Upload a Project"   
-        echo
+        if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
+            echo -e " ${C_YELLOW}U. Update Script to v$LATEST_VERSION${C_RESET}"
+        fi
+        echo 
         echo -e " ${C_RED}0. Exit${C_RESET}"
         echo "───────────────────────────────────────────────────────────"
         read -rp "Choose option: " option
@@ -597,7 +617,8 @@ function main_menu() {
         7) list_all_supported_boards ;;
         8) install_core ;;
         9) open_serial ;;
-        0) clear; echo "Goodbye Genius!"; break ;;
+        [uU]) update_script ;;
+        0) clear; echo "Goodbye Genius! V$VERSION"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
     done
