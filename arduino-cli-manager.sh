@@ -3,7 +3,7 @@
 # Arduino Project Manager - Interactive CLI Tool
 
 # --- Configuration ---
-VERSION="1.0.0" # Script version
+VERSION="1.5.0" # Script version
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
