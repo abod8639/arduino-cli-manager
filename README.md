@@ -2,6 +2,11 @@
 
 ![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/abod8639/arduino-cli-manager/latest/main)
+
+
+
+
 
 `arduino-cli-manager` is a powerful and user-friendly interactive shell script designed to streamline your Arduino development workflow. It wraps the `arduino-cli` in a colorful, intuitive terminal interface, making it easy to manage boards, ports, and projects without memorizing complex commands.
 
