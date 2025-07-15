@@ -39,7 +39,6 @@ function check_dependencies() {
 
 # --- Config Functions ---
 function save_config() {
-    # Save current settings to the config file
     echo "# Arduino CLI Manager Configuration" > "$CONFIG_FILE"
     echo "FQBN='${FQBN:-$DEFAULT_FQBN}'" >> "$CONFIG_FILE"
     echo "PORT='${PORT:-$DEFAULT_PORT}'" >> "$CONFIG_FILE"

@@ -44,7 +44,12 @@ To get started, simply clone the repository:
 
 ```bash
 git clone https://github.com/abod8639/arduino-cli-manager.git
+
 cd arduino-cli-manager
+
+chmod +x arduino-cli-manager.sh
+
+./arduino-cli-manager.sh
 ```
 
 For detailed instructions on how to install dependencies and use the tool, please refer to the [Installation](#installation) and [How to Use](#how-to-use) sections below.
