@@ -600,7 +600,7 @@ function main_menu() {
         echo -e " ${C_BLUE}4.${C_RESET} Compile Current Project        ${C_BLUE}9.${C_RESET} Open Serial Monitor"
         echo -e " ${C_BLUE}5.${C_RESET} Upload a Project"   
         if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
-            echo -e " ${C_YELLOW}U. Update Script to v$LATEST_VERSION${C_RESET}"
+            echo -e "\n ${C_YELLOW}U. Update Script to v$LATEST_VERSION${C_RESET}"
         fi
         echo 
         echo -e " ${C_RED}0. Exit${C_RESET}"
