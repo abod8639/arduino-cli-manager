@@ -1,6 +1,11 @@
 #!/bin/bash
 
 # Arduino Project Manager - Interactive CLI Tool
+#
+# Copyright (c) 2025 abod8639
+#
+# This script is licensed under the MIT License.
+# See the LICENSE file for details.
 
 # --- Configuration ---
 VERSION="1.0.5" # Script version
@@ -77,12 +82,12 @@ function print_header() {
                  echo " │ Select board, serial, compile, upload & monitor easily │"
               echo -e " └────────────────────────────────────────────────────────┘${C_RESET}"
              get_version_line
-    echo "───────────────────────────────────────────────────────────"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}"
-    printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
-    echo "───────────────────────────────────────────────────────────"
+                 echo "───────────────────────────────────────────────────────────"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
+                 echo "───────────────────────────────────────────────────────────"
 }
 
 

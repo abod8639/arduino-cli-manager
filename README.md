@@ -168,3 +168,10 @@ DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 SKETCH_DIR="$HOME/Arduino"
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Designed with care and ❤️ by Dexter
+
