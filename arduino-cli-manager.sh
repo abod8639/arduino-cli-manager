@@ -112,18 +112,10 @@ function run_arduino_cli_command() {
 
 # --- Core Functions ---
 
-function list_installed_boards() {
-    print_header
-    echo -e "${C_GREEN}==> Installed Boards:${C_RESET}"
-    run_arduino_cli_command core list
-    echo
-    press_enter_to_continue
-}
-
 function list_all_supported_boards() {
     print_header
     echo -e "${C_GREEN}==> All Supported Boards (use this to find FQBNs):${C_RESET}"
-    run_arduino_cli_command board listall | awk '{print $1}' | grep -v "FQBN"
+    run_arduino_cli_command board listall 
     echo
     press_enter_to_continue
 }
