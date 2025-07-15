@@ -2,9 +2,7 @@
 
 ![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/abod8639/arduino-cli-manager/latest/main)
-
-
+![GitHub Release](https://img.shields.io/github/v/release/abod8639/arduino-cli-manager)
 
 
 
@@ -174,4 +172,5 @@ SKETCH_DIR="$HOME/Arduino"
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 Designed with care and ❤️ by Dexter
+
 
