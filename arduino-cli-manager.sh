@@ -3,6 +3,7 @@
 # Arduino Project Manager - Interactive CLI Tool
 
 # --- Configuration ---
+VERSION="1.0.0" # Script version
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
@@ -34,6 +35,12 @@ function check_dependencies() {
         echo "Installation instructions can be found at:"
         echo -e "${C_YELLOW}https://arduino.github.io/arduino-cli/latest/installation/${C_RESET}"
         exit 1
+    fi
+    if ! command -v jq &> /dev/null; then
+        echo -e "${C_YELLOW}Warning: 'jq' is not installed. Update checks will be skipped.${C_RESET}"
+        echo "Please install 'jq' to enable automatic update notifications."
+        echo "(e.g., 'sudo apt install jq' or 'brew install jq')"
+        sleep 3
     fi
 }
 
@@ -69,7 +76,7 @@ function print_header() {
     echo -e "${C_GREEN}"
     echo " ┌────────────────────────────────────────────────────────┐  "
     echo " │                 ARDUINO CLI MANAGER                    │  "
-    echo " │                                                        │  "
+    echo -e " │${C_YELLOW}                        V$VERSION                          ${C_GREEN}│  "
     echo " │ Select board, serial, compile, upload & monitor easily │  "
     echo " └────────────────────────────────────────────────────────┘  "
     echo -e "${C_RESET}"
@@ -446,6 +453,54 @@ function open_serial() {
 }
 
 
+# --- Update Check ---
+function check_for_update() {
+    if ! command -v jq &> /dev/null || ! command -v curl &> /dev/null; then
+        return # Skip check if jq or curl is not available
+    fi
+
+    local repo="abod8639/arduino-cli-manager"
+    local latest_version
+    local response
+
+    # Fetch the latest release data from GitHub API
+    response=$(curl -s "https://api.github.com/repos/$repo/releases/latest")
+
+    # Check if the response contains a tag_name
+    if echo "$response" | jq -e '.tag_name' > /dev/null; then
+        latest_version=$(echo "$response" | jq -r '.tag_name' | sed 's/v//') # Remove 'v' prefix if it exists
+    else
+        # If no release is found, don't show an error, just exit silently.
+        return
+    fi
+
+
+    # Compare versions
+    if [[ "$latest_version" != "$VERSION" && -n "$latest_version" ]]; then
+        print_header
+        echo -e "${C_GREEN}==> Update Available! ${C_RESET}"
+        echo -e "A new version (${C_YELLOW}v$latest_version${C_RESET}) of the script is available."
+        echo -e "Your current version is ${C_YELLOW}v$VERSION${C_RESET}."
+        echo
+        echo -e "You can download the latest version from:"
+        echo -e "${C_CYAN}https://github.com/$repo/releases/latest${C_RESET}"
+        echo
+        echo -e "Or run this command to update:"
+        echo -e "${C_YELLOW}curl -sL https://raw.githubusercontent.com/$repo/main/arduino-cli-manager.sh -o arduino-cli-manager.sh && chmod +x arduino-cli-manager.sh${C_RESET}"
+        echo
+        press_enter_to_continue
+    fi
+}
+
+function list_installed_cores() {
+    print_header
+    echo -e "${C_GREEN}==> Installed Cores:${C_RESET}"
+    run_arduino_cli_command core list
+    echo
+    press_enter_to_continue
+}
+
+
 function install_core() {
     print_header
     local core_name=""
@@ -538,11 +593,11 @@ function main_menu() {
         3) select_port ;;
         4) compile_sketch ;;
         5) upload_sketch ;;
-        6) list_installed_boards ;;
+        6) list_installed_cores ;;
         7) list_all_supported_boards ;;
         8) install_core ;;
         9) open_serial ;;
-        0) clear; echo "Goodbye!"; break ;;
+        0) clear; echo "Goodbye Genius!"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
     done
@@ -556,4 +611,5 @@ mkdir -p "$SKETCH_DIR"
 load_config
 trap save_config EXIT
 
+check_for_update
 main_menu
