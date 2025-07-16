@@ -69,19 +69,19 @@ function load_config() {
 
 function print_header() {
     clear
-    echo ""
-    echo -e "${C_CYAN}  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗ "
-                echo "  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗ "
-                echo "  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║"
-                echo "  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║"
-                echo "  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝"
-             echo -e "  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ${C_RESET}"
+     echo ""
+     echo -e "${C_CYAN}  ██████╗  █████╗ ██████╗  ██╗   ██╗██╗███╗   ██╗ ██████╗ "
+                 echo "  ██╔══██╗██╔══██╗██╔══██╗ ██║   ██║██║████╗  ██║██╔═══██╗ "
+                 echo "  ██████╔╝███████║██║  ██║ ██║   ██║██║██╔██╗ ██║██║   ██║"
+                 echo "  ██╔══██║██╔══██║██║  ██║ ██║   ██║██║██║╚██╗██║██║   ██║"
+                 echo "  ██████╔╝██║  ██║██████╔╝ ╚██████╔╝██║██║ ╚████║╚██████╔╝"
+              echo -e "  ╚═════╝ ╚═╝  ╚═╝╚═════╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ${C_RESET}"
     echo -e "${C_GREEN} ┌────────────────────────────────────────────────────────┐"
                  echo " │                 ARDUINO CLI MANAGER                    │"
                  echo " │                                                        │"
                  echo " │ Select board, serial, compile, upload & monitor easily │"
               echo -e " └────────────────────────────────────────────────────────┘${C_RESET}"
-             get_version_line
+                        get_version_line
                  echo "───────────────────────────────────────────────────────────"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
@@ -91,7 +91,7 @@ function print_header() {
 }
 
 
-vercmp_portable() {
+function vercmp_portable() {
     local ver1=(${1//./ })
     local ver2=(${2//./ })
     local len=${#ver1[@]}
@@ -106,7 +106,7 @@ vercmp_portable() {
     return 0
 }
 
-get_version_line() {
+function get_version_line() {
     local current="${VERSION#v}"
     local latest="${LATEST_VERSION#v}"
 
