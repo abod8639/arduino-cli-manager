@@ -8,7 +8,7 @@
 # See the LICENSE file for details.
 
 # --- Configuration ---
-VERSION="1.0.5" # Script version
+VERSION="1.0.6" # Script version
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
@@ -91,7 +91,6 @@ function print_header() {
 }
 
 
-# دالة مقارنة الإصدارات المحمولة
 vercmp_portable() {
     local ver1=(${1//./ })
     local ver2=(${2//./ })
