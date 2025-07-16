@@ -91,18 +91,40 @@ function print_header() {
 }
 
 
+# دالة مقارنة الإصدارات المحمولة
+vercmp_portable() {
+    local ver1=(${1//./ })
+    local ver2=(${2//./ })
+    local len=${#ver1[@]}
+    (( ${#ver2[@]} > len )) && len=${#ver2[@]}
+
+    for ((i=0; i<len; i++)); do
+        local a=${ver1[i]:-0}
+        local b=${ver2[i]:-0}
+        ((10#$a > 10#$b)) && return 1
+        ((10#$a < 10#$b)) && return 2
+    done
+    return 0
+}
+
 get_version_line() {
     local current="${VERSION#v}"
     local latest="${LATEST_VERSION#v}"
 
-    if [[ -n "$LATEST_VERSION" && "$(vercmp "$latest" "$current")" -gt 0 ]]; then
-        local update_msg="Update available: v$VERSION → v$LATEST_VERSION"
-        printf " ${C_YELLOW}%*s${C_RESET}${C_GREEN}%*s \n" $(( (59 + ${#update_msg}) / 2 )) "$update_msg" $(( (59 - ${#update_msg}) / 2 )) ""
-    else
-        local version_msg="v$VERSION"
-        printf "${C_GREEN} %*s%*s \n${C_RESET}" $(( (59 + ${#version_msg}) / 2 )) "$version_msg" $(( (59 - ${#version_msg}) / 2 )) ""
+    if [[ -n "$LATEST_VERSION" ]]; then
+        vercmp_portable "$latest" "$current"
+        local result=$?
+        if [[ $result -eq 1 ]]; then
+            local update_msg="Update available: v$VERSION → v$LATEST_VERSION"
+            printf " ${C_YELLOW}%*s${C_RESET}${C_GREEN}%*s \n" $(( (59 + ${#update_msg}) / 2 )) "$update_msg" $(( (59 - ${#update_msg}) / 2 )) ""
+            return
+        fi
     fi
+
+    local version_msg="v$VERSION"
+    printf "${C_GREEN} %*s%*s \n${C_RESET}" $(( (59 + ${#version_msg}) / 2 )) "$version_msg" $(( (59 - ${#version_msg}) / 2 )) ""
 }
+
 
 function press_enter_to_continue() {
     read -p "Press Enter to continue..."
