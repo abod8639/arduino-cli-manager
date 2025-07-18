@@ -46,7 +46,7 @@ function check_dependencies() {
         echo -e "${C_YELLOW}Warning: 'jq' is not installed. Update checks will be skipped.${C_RESET}"
         echo "Please install 'jq' to enable automatic update notifications."
         echo "(e.g., 'sudo apt install jq' or 'brew install jq')"
-        sleep 3
+        sleep 1
     fi
 }
 
@@ -241,7 +241,7 @@ function select_board() {
         print_header
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
         echo "(e.g., 'sudo apt install fzf' or 'brew install fzf')"
-        sleep 3
+        sleep 1
         _select_board_menu
     fi
 }
@@ -256,7 +256,7 @@ function select_port() {
     if [ -z "$board_list" ]; then
         echo -e "${C_RED}No connected boards found. Using default port: $DEFAULT_PORT${C_RESET}"
         PORT="$DEFAULT_PORT"
-        sleep 2
+        sleep 1
         return
     fi
 
@@ -272,7 +272,7 @@ function select_port() {
         FQBN=$(echo "$choice" | awk '{print $(NF-1)}')
         echo -e "${C_GREEN}Selected port: ${C_YELLOW}${PORT}${C_RESET}"
         echo -e "${C_GREEN}Selected FQBN: ${C_YELLOW}${FQBN}${C_RESET}"
-        sleep 2
+        sleep 1
     else
         echo -e "${C_RED}No selection made.${C_RESET}"
         sleep 1
@@ -322,7 +322,7 @@ function select_or_create_project() {
     else
         # Fallback to the original menu if fzf is not installed
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a better project selection experience.${C_RESET}"
-        sleep 2
+        sleep 1
         print_header
         echo -e "${C_GREEN}==> (1) Select an existing sketch? \n==> (2) Create a new sketch?${C_RESET}"
         read -rp "[1/2]: " menu_choice
@@ -357,7 +357,7 @@ function compile_sketch() {
     print_header
     if [[ -z "$PROJECT" ]]; then
         echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
-        sleep 2
+        sleep 1
         return
     fi
     echo -e "${C_GREEN}==> Compiling sketch '${PROJECT##*/}'...${C_RESET}"
@@ -492,8 +492,10 @@ function open_serial() {
 function edit_project_nvim() {
     print_header
     if [[ -z "$PROJECT" || "$PROJECT" == "$DEFAULT_PROJECT" ]]; then
-        echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
-        sleep 2
+    echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
+    select_or_create_project
+    edit_project_nvim
+        sleep 1
         return
     fi
 
@@ -614,7 +616,7 @@ function install_core() {
         # Fallback to menu if fzf is not installed
         echo -e "${C_YELLOW}Tip: Install 'fzf' for a much better interactive search experience.${C_RESET}"
         echo "(e.g., 'sudo apt install fzf' or 'brew install fzf')"
-        sleep 3
+        sleep 1
 
         echo -e "${C_GREEN}==> Available Cores:${C_RESET}"
         mapfile -t all_cores < <(run_arduino_cli_command core search --all | sed '1d')
