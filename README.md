@@ -53,13 +53,31 @@ cd arduino-cli-manager
 
 For detailed instructions on how to install dependencies and use the tool, please refer to the [Installation](#installation) and [How to Use](#how-to-use) sections below.
 
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- **bash**: The script runs in bash shell (default on most Unix-like systems)
+- **arduino-cli**: The Arduino command-line interface
+- **fzf** (optional but recommended): For enhanced interactive selection
+- **nvim** (optional): For integrated project editing
+
 ## Installation
 
 ### Step 1: `arduino-cli`
 
-First, ensure you have `arduino-cli` installed and configured on your system. For detailed installation instructions for your operating system, please refer to the [official Arduino CLI installation guide](https://arduino.github.io/arduino-cli/latest/installation/).
+1. Install `arduino-cli` using one of these methods:
+- **Using curl (recommended)**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+```
+- **Using Homebrew (macOS)**:
+```bash
+brew install arduino-cli
+```
+For other methods, see the [official Arduino CLI installation guide](https://arduino.github.io/arduino-cli/latest/installation/).
 
-After installing `arduino-cli`, initialize it and update the core index:
+2. Initialize and update the core index:
 ```bash
 arduino-cli config init
 arduino-cli core update-index
@@ -128,16 +146,16 @@ You will be greeted by the main menu, which always displays your current setting
  │ Select board, serial, compile, upload & monitor easily │       
  └────────────────────────────────────────────────────────┘       
 ───────────────────────────────────────────────────────────
+ Project:  Not Selected
  Board:    esp32:esp32:esp32 
  Port:     /dev/ttyACM1
  Baud:     115200
- Project:  Not Selected
 ───────────────────────────────────────────────────────────
-1. Select/Create Project          6. List Installed Cores
-2. Select Board (FQBN)            7. List All Boards
-3. Select Port                    8. Install a Core
-4. Compile Current Project        9. Open Serial Monitor
-5. Upload a Project
+1. Select/Create Project          6.  List Installed Cores
+2. Select Board (FQBN)            7.  List All Boards
+3. Select Port                    8.  Install a Core
+4. Compile Current Project        9.  Open Serial Monitor
+5. Upload a Project               10. Edit Project (nvim)
 
 0. Exit
 ───────────────────────────────────────────────────────────
@@ -146,15 +164,17 @@ Choose option:
 
 ### Menu Options Explained
 
-- **1. List Installed Cores**: Shows the board packages you have installed.
-- **2. List All Boards**: Lists every board supported by your installed cores. Useful for finding the correct FQBN.
-- **3. Select Board (FQBN)**: Opens an interactive search (`fzf` if available) to filter and select your target board from a complete list.
-- **4. Select Port**: Opens an interactive menu (`fzf` if available) to choose from all currently connected serial ports.
-- **5. Select/Create Project**: Opens an interactive search (`fzf` if available) to choose an existing project or create a new one on the fly.
-- **6. Compile Current Project**: Compiles the sketch in the currently selected project directory.
-- **7. Upload a Project**: If a project is already selected, it asks for confirmation to upload it. If not, it prompts you to select a project to upload.
-- **8. Open Serial Monitor**: Connects to the selected port to view `Serial.print()` output from your board.
-- **9. Exit**: Exits the script.
+- **1. Select/Create Project**: Opens an interactive search (`fzf` if available) to choose an existing project or create a new one on the fly.
+- **2. Select Board (FQBN)**: Opens an interactive search to filter and select your target board from a complete list.
+- **3. Select Port**: Opens an interactive menu to choose from all currently connected serial ports.
+- **4. Compile Current Project**: Compiles the sketch in the currently selected project directory.
+- **5. Upload a Project**: If a project is already selected, asks for confirmation to upload it. Otherwise, prompts to select a project.
+- **6. List Installed Cores**: Shows all board packages currently installed on your system.
+- **7. List All Boards**: Lists every board supported by your installed cores, useful for finding the correct FQBN.
+- **8. Install a Core**: Helps you install additional board support packages.
+- **9. Open Serial Monitor**: Connects to the selected port to view `Serial.print()` output from your board.
+- **10. Edit Project (nvim)**: Opens the current project in Neovim for editing.
+- **0. Exit**: Exits the script.
 
 ### Configuration
 
@@ -167,9 +187,37 @@ DEFAULT_PORT="/dev/ttyACM1"
 SKETCH_DIR="$HOME/Arduino"
 ```
 
+## Common Operations
+
+### Creating a New Project
+
+1. Select option `1` from the main menu
+2. Choose "CREATE NEW PROJECT" from the list
+3. Enter your project name
+4. The script will create a properly structured Arduino sketch
+
+### Uploading to a Board
+
+1. Use option `2` to select your board type (FQBN)
+2. Use option `3` to select the correct serial port
+3. Select option `5` to upload
+4. Choose your project if not already selected
+
+### Monitoring Serial Output
+
+1. Ensure correct port is selected (option `3`)
+2. Use option `9` to open the serial monitor
+3. Press Ctrl+C to exit the monitor when done
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+---
 
 Designed with care and ❤️ by Dexter
 
