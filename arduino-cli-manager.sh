@@ -504,10 +504,16 @@ function edit_project_nvim() {
         return
     fi
 
-    echo -e "${C_GREEN}==> Opening project '${PROJECT##*/}' in nvim...${C_RESET}"
+    local project_name
+    project_name=$(basename "$PROJECT")
+
+    echo -e "${C_GREEN}==> Opening project '${project_name}' in nvim...${C_RESET}"
     sleep 1
-    # Open nvim, allowing it to take over the terminal
-    nvim "$PROJECT"
+    
+    # Change to the project directory and open the main .ino file
+    (
+        cd "$PROJECT" && nvim "${project_name}.ino"
+    )
     
     echo # Add a newline for better formatting after nvim exits
     press_enter_to_continue
