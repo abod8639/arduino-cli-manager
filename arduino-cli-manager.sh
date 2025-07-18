@@ -489,6 +489,30 @@ function open_serial() {
     press_enter_to_continue
 }
 
+function edit_project_nvim() {
+    print_header
+    if [[ -z "$PROJECT" || "$PROJECT" == "$DEFAULT_PROJECT" ]]; then
+        echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
+        sleep 2
+        return
+    fi
+
+    if ! command -v nvim &> /dev/null; then
+        echo -e "${C_RED}Error: 'nvim' is not installed or not in your PATH.${C_RESET}"
+        echo "Please install it to use this feature."
+        press_enter_to_continue
+        return
+    fi
+
+    echo -e "${C_GREEN}==> Opening project '${PROJECT##*/}' in nvim...${C_RESET}"
+    sleep 1
+    # Open nvim, allowing it to take over the terminal
+    nvim "$PROJECT"
+    
+    echo # Add a newline for better formatting after nvim exits
+    press_enter_to_continue
+}
+
 
 # --- Update Check ---
 function check_for_update() {
@@ -624,7 +648,7 @@ function main_menu() {
         echo -e " ${C_BLUE}2.${C_RESET} Select Board (FQBN)            ${C_BLUE}7.${C_RESET} List All Boards"
         echo -e " ${C_BLUE}3.${C_RESET} Select Port                    ${C_BLUE}8.${C_RESET} Install a Core"
         echo -e " ${C_BLUE}4.${C_RESET} Compile Current Project        ${C_BLUE}9.${C_RESET} Open Serial Monitor"
-        echo -e " ${C_BLUE}5.${C_RESET} Upload a Project"   
+        echo -e " ${C_BLUE}5.${C_RESET} Upload a Project               ${C_BLUE}10.${C_RESET} Edit Project (nvim)"
         if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
             echo -e "\n ${C_YELLOW}U. Update Script to v$LATEST_VERSION${C_RESET}"
         fi
@@ -643,6 +667,7 @@ function main_menu() {
         7) list_all_supported_boards ;;
         8) install_core ;;
         9) open_serial ;;
+        10) edit_project_nvim ;;
         [uU]) update_script ;;
         0) clear; echo "Goodbye Genius! V$VERSION"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
