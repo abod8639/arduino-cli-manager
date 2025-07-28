@@ -518,7 +518,7 @@ function edit_project_nvim() {
     )
     
     echo # Add a newline for better formatting after nvim exits
-    press_enter_to_continue
+    # press_enter_to_continue
 }
 
 
@@ -652,19 +652,20 @@ function install_core() {
 function main_menu() {
     while true; do
         print_header
-        echo -e " ${C_BLUE}1.${C_RESET} Select/Create Project          ${C_BLUE}6.${C_RESET}  List Installed Cores"
-        echo -e " ${C_BLUE}2.${C_RESET} Select Board (FQBN)            ${C_BLUE}7.${C_RESET}  List All Boards"
-        echo -e " ${C_BLUE}3.${C_RESET} Select Port                    ${C_BLUE}8.${C_RESET}  Install a Core"
-        echo -e " ${C_BLUE}4.${C_RESET} Compile Current Project        ${C_BLUE}9.${C_RESET}  Open Serial Monitor"
-        echo -e " ${C_BLUE}5.${C_RESET} Upload a Project               ${C_BLUE}10.${C_RESET} Edit Project (nvim)"
+        echo -e " ${C_BLUE}1.${C_RESET} ${C_BLUE}S${C_RESET}elect/Create Project          ${C_BLUE}6.${C_RESET}  ${C_BLUE}L${C_RESET}ist ${C_BLUE}I${C_RESET}nstalled Cores"
+        echo -e " ${C_BLUE}2.${C_RESET} Select ${C_BLUE}B${C_RESET}oard (FQBN)            ${C_BLUE}7.${C_RESET}  ${C_BLUE}L${C_RESET}ist ${C_BLUE}a${C_RESET}ll Boards"
+        echo -e " ${C_BLUE}3.${C_RESET} Select ${C_BLUE}P${C_RESET}ort                    ${C_BLUE}8.${C_RESET}  ${C_BLUE}I${C_RESET}nstall a Core"
+        echo -e " ${C_BLUE}4.${C_RESET} ${C_BLUE}C${C_RESET}ompile Current Project        ${C_BLUE}9.${C_RESET}  ${C_BLUE}O${C_RESET}pen Serial Monitor"
+        echo -e " ${C_BLUE}5. U${C_RESET}pload a Project               ${C_BLUE}10. E${C_RESET}dit Project (nvim)"
         if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
-            echo -e "\n ${C_YELLOW}U. Update Script to v$LATEST_VERSION${C_RESET}"
+            echo -e "\n ${C_YELLOW}UU. Update Script to v$LATEST_VERSION${C_RESET}"
         fi
         echo 
         echo -e " ${C_RED}0. Exit${C_RESET}"
         echo "───────────────────────────────────────────────────────────"
         read -rp "Choose option: " option
 
+# ----------------------------------------------------------
         case $option in
         1) select_or_create_project ;;
         2) select_board ;;
@@ -676,7 +677,19 @@ function main_menu() {
         8) install_core ;;
         9) open_serial ;;
         10) edit_project_nvim ;;
-        [uU]) update_script ;;
+# -------------------shortcut------------------------------
+        [sS])select_or_create_project ;;
+        [bB])select_board ;;
+        [pP])select_port ;;
+        [cC])compile_sketch;;
+        [uU])upload_sketch ;;
+        [lL][iI])list_installed_cores ;;
+        [oO])open_serial ;;
+        [iI])install_core ;;
+        [lL][aA])list_all_supported_boards ;;
+        [eE])edit_project_nvim;;
+        [uU][uU]) update_script ;;
+# ----------------------------------------------------------
         0) clear; echo "Goodbye Genius! V$VERSION"; break ;;
         *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
