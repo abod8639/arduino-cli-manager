@@ -176,6 +176,22 @@ Choose option:
 - **10. Edit Project (nvim)**: Opens the current project in Neovim for editing.
 - **0. Exit**: Exits the script.
 
+### Keyboard Shortcuts
+
+For faster access, you can use the following keyboard shortcuts instead of menu numbers:
+
+- **s** or **S**: Select/Create Project
+- **b** or **B**: Select Board (FQBN)
+- **p** or **P**: Select Port
+- **c** or **C**: Compile Current Project
+- **u** or **U**: Upload Project
+- **li** or **LI**: List Installed Cores
+- **la** or **LA**: List All Boards
+- **i** or **I**: Install Core
+- **o** or **O**: Open Serial Monitor
+- **e** or **E**: Edit Project (nvim)
+- **uu** or **UU**: Update Script (when update is available)
+
 ### Configuration
 
 You can change the default Board, Port, and the main Arduino sketch directory by editing the configuration variables at the top of the `arduino-cli-manager.sh` script:
