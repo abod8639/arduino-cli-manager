@@ -286,7 +286,10 @@ function select_port() {
 function select_or_create_project() {
     print_header
 
-    if command -v fzf &> /dev/null; then
+    if command -v fzf &> /dev/null; then 
+
+    
+
         local find_cmd
         if command -v fd &> /dev/null; then
             find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
@@ -300,6 +303,7 @@ function select_or_create_project() {
         local choice
         choice=$( (echo "--- CREATE NEW PROJECT ---"; echo "$projects") | \
             fzf --reverse --prompt="Select or create a project: " \
+            --height=50%\
                 --header "Enter to select."
         )
 
