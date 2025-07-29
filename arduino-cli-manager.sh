@@ -268,7 +268,7 @@ function select_port() {
     echo -e "${C_YELLOW}Multiple boards detected. Please select one:${C_RESET}"
     local choice
     choice=$( (echo "$board_list") | \
-        fzf --reverse --header="Select a board/port" --prompt="Selection: "
+        fzf --height=50%\ --reverse --header="Select a board/port" --prompt="Selection: "
     )
 
     if [[ -n "$choice" ]]; then
