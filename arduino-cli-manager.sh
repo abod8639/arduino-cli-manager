@@ -173,7 +173,7 @@ function _select_board_fzf() {
     echo -e "${C_GREEN}==> Use interactive search. ${C_YELLOW}Enter${C_RESET} to select.${C_RESET}"
     local choice
     choice=$(run_arduino_cli_command board listall | sed '1d' | \
-        fzf --reverse --prompt="Select a board: " \
+        fzf --height=50% --reverse --prompt="Select a board: " \
             --header "Enter to select." )
     
     if [[ -n "$choice" ]]; then
