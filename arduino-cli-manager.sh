@@ -82,12 +82,12 @@ function print_header() {
                  echo " │ Select board, serial, compile, upload & monitor easily │"
               echo -e " └────────────────────────────────────────────────────────┘${C_RESET}"
                         get_version_line
-                 echo "───────────────────────────────────────────────────────────"
+                 echo "────────────────────────────────────────────────────────────"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}"
-                 echo "───────────────────────────────────────────────────────────"
+                 echo "────────────────────────────────────────────────────────────"
 }
 
 
@@ -738,7 +738,7 @@ function main_menu() {
         echo -e " ${C_YELLOW}8 (I)${C_RESET} Install Core             " 
         echo -e " ${C_YELLOW}9 (M)${C_RESET} Open Serial Monitor      "
         echo -e " ${C_YELLOW}0 (E)${C_RESET} Edit Project (nvim)      "
-        echo " ─────────────────────────────────────────────────────────"
+        echo "────────────────────────────────────────────────────────────"
         
         local update_prompt=""
         if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
@@ -746,7 +746,7 @@ function main_menu() {
         fi
         
         echo -e " ${update_prompt}${update_prompt:+, }(${C_RED}Q${C_RESET}) Quit"
-        echo " ─────────────────────────────────────────────────────────"
+        echo "────────────────────────────────────────────────────────────"
 
         read -rp "Enter your choice: " -n 1 option
         echo
