@@ -227,7 +227,7 @@ SKETCH_DIR="$HOME/Arduino"
 ### Uploading to a Board
 
 1. Use option `B` to select your board type (FQBN)
-2. Use option ` p` to select the correct serial port
+2. Use option `p` to select the correct serial port
 3. Select option `U` to upload
 4. Choose your project if not already selected
 
