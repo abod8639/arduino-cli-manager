@@ -779,7 +779,6 @@ function main_menu() {
 
 
 
-
 # --- Initialization ---
 check_dependencies
 mkdir -p "$SKETCH_DIR"
