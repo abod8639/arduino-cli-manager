@@ -296,16 +296,7 @@ function select_or_create_project() {
         local choice
         choice=$( (echo "--- CREATE NEW PROJECT ---"; echo "$projects") | \
             fzf --reverse --prompt="Select or create a project: " \
-                --header "Enter: select, Ctrl-D: delete project" \
-                --bind "ctrl-d:execute(\
-                    if [ {} != '--- CREATE NEW PROJECT ---' ]; then\
-                        read -p \"Delete project {/}? This is irreversible. [y/N] \" -n 1 -r; echo;\
-                        if [[ \$REPLY =~ ^[Yy]$ ]]; then\
-                            rm -rf \"{}\" && echo 'Project deleted.' || echo 'Failed to delete.'\
-                            sleep 1;\
-                        fi\
-                    fi\
-                )+reload( (echo \"--- CREATE NEW PROJECT ---\"; eval \"$find_cmd\") )"
+                --header "Enter to select."
         )
 
         if [[ -z "$choice" ]]; then
@@ -353,6 +344,7 @@ function select_or_create_project() {
     fi
 }
 
+
 function compile_sketch() {
     print_header
     if [[ -z "$PROJECT" ]]; then
@@ -373,117 +365,193 @@ function compile_sketch() {
 function upload_sketch() {
     print_header
 
-    local project_to_upload=""
-
-    # First, determine which project to upload
-    if [[ -n "$PROJECT" && "$PROJECT" != "$DEFAULT_PROJECT" ]]; then
-        echo -e "${C_GREEN}==> Current project is '${C_YELLOW}${PROJECT##*/}${C_GREEN}'.${C_RESET}"
-        read -rp "Upload this project? [Y/n]: " choice
-        if [[ -z "$choice" || "$choice" =~ ^[Yy]$ ]]; then
-            project_to_upload="$PROJECT"
+    # 1. Select project if not already selected
+    local project_to_upload="$PROJECT"
+    if [[ -z "$project_to_upload" || "$project_to_upload" == "$DEFAULT_PROJECT" ]]; then
+        echo -e "${C_YELLOW}No project is currently selected.${C_RESET}"
+        select_or_create_project
+        project_to_upload="$PROJECT" # Update after selection
+        if [[ -z "$project_to_upload" || "$project_to_upload" == "$DEFAULT_PROJECT" ]]; then
+            return # User cancelled selection
         fi
     fi
 
-    # If no project was chosen above, show the selection menu
-    if [[ -z "$project_to_upload" ]]; then
-        # A second print_header is needed in case we came from the prompt above
-        print_header
-        echo -e "${C_GREEN}==> Select a project to upload:${C_RESET}"
+    # 2. Detect and select port for upload
+    echo -e "${C_GREEN}==> Detecting connected boards for upload...${C_RESET}"
+    local board_list
+    board_list=$(run_arduino_cli_command board list | awk 'NR>1')
 
-        local find_cmd
-        if command -v fd &> /dev/null; then
-            find_cmd="fd . \"$SKETCH_DIR\" --type d --max-depth 1"
-        else
-            find_cmd="find \"$SKETCH_DIR\" -mindepth 1 -maxdepth 1 -type d"
-        fi
-
-        project_to_upload=$(eval "$find_cmd" | \
-            fzf --reverse --prompt="Select project to upload: "
-        )
+    if [ -z "$board_list" ]; then
+        echo -e "${C_RED}No connected boards found. Cannot upload.${C_RESET}"
+        press_enter_to_continue
+        return
     fi
 
-    # Now, perform the upload if a project was selected
-    if [[ -n "$project_to_upload" ]]; then
-        echo -e "${C_GREEN}==> Uploading sketch '${project_to_upload##*/}'...${C_RESET}"
-        if ! arduino-cli upload --fqbn "${FQBN:-$DEFAULT_FQBN}" -p "${PORT:-$DEFAULT_PORT}" "$project_to_upload" -v; then
-            echo -e "${C_RED}Error: Upload failed for '${project_to_upload##*/}'. Please check the output above for details.${C_RESET}"
-            press_enter_to_continue
-            return # Exit function on failure
-        fi
-        echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully.${C_RESET}"
+    local upload_port=""
+    local upload_fqbn=""
+    
+    if [ "$(echo "$board_list" | wc -l)" -eq 1 ]; then
+        upload_port=$(echo "$board_list" | awk '{print $1}')
+        upload_fqbn=$(echo "$board_list" | awk '{print $(NF-1)}')
+        echo -e "${C_GREEN}Auto-selected port: ${C_YELLOW}${upload_port}${C_RESET}"
     else
-        # This case happens if user presses Esc in fzf or says "n" to current project and Esc in fzf
-        echo -e "${C_RED}No project selected for upload.${C_RESET}"
+        echo -e "${C_YELLOW}Multiple boards detected. Please select one for upload:${C_RESET}"
+        local choice
+        choice=$( (echo "$board_list") | \
+            fzf --reverse --header="Select a board/port to upload to" --prompt="Selection: "
+        )
+
+        if [[ -n "$choice" ]]; then
+            upload_port=$(echo "$choice" | awk '{print $1}')
+            upload_fqbn=$(echo "$choice" | awk '{print $(NF-1)}')
+        else
+            echo -e "${C_RED}No selection made. Aborting upload.${C_RESET}"
+            press_enter_to_continue
+            return
+        fi
+    fi
+    
+    # Update global state just for this operation
+    PORT="$upload_port"
+    FQBN="$upload_fqbn"
+
+    # 3. Compile and Upload
+    echo -e "${C_GREEN}==> Compiling sketch '${project_to_upload##*/}' for FQBN ${C_YELLOW}${FQBN}${C_RESET}...${C_RESET}"
+    if ! arduino-cli compile --fqbn "$FQBN" "$project_to_upload"; then
+        echo -e "${C_RED}Error: Compilation failed. Please check the output above.${C_RESET}"
+        press_enter_to_continue
+        return
     fi
 
-    press_enter_to_continue
+    echo -e "${C_GREEN}==> Uploading to port ${C_YELLOW}${PORT}${C_RESET}...${C_RESET}"
+    if ! arduino-cli upload --fqbn "$FQBN" -p "$PORT" "$project_to_upload" -v; then
+        echo -e "${C_RED}Error: Upload failed. Please check the output above.${C_RESET}"
+        press_enter_to_continue
+        return
+    fi
+    
+    echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
+    
+    # 4. Ask to open serial monitor
+    read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
+    if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
+        open_serial
+    else
+        press_enter_to_continue
+    fi
 }
 
 function open_serial() {
     print_header
+    echo -e "${C_GREEN}==> Opening Serial Monitor...${C_RESET}"
 
-    read -rp "Use current baud rate (${BAUD:-$DEFAULT_BAUD})? [Y/n]: " use_current_baud
-    if [[ -z "$use_current_baud" || "$use_current_baud" =~ ^[Yy]$ ]]; then
-        : # No-op, baud is already set
+    # 1. Detect and select port
+    local board_list
+    board_list=$(run_arduino_cli_command board list | awk 'NR>1')
+
+    if [ -z "$board_list" ]; then
+        echo -e "${C_RED}No connected boards found. Cannot open serial monitor.${C_RESET}"
+        press_enter_to_continue
+        return
+    fi
+
+    local selected_port=""
+    
+    # If only one board is connected, use it automatically
+    if [ "$(echo "$board_list" | wc -l)" -eq 1 ]; then
+        selected_port=$(echo "$board_list" | awk '{print $1}')
+        echo -e "${C_GREEN}Auto-selected port: ${C_YELLOW}${selected_port}${C_RESET}"
+        PORT="$selected_port" # Update global state
     else
-        local baud_rates=(
-          "300"      
-          "1200"     
-          "2400"     
-          "4800"     
-          "9600"     
-          "14400"    
-          "19200"    
-          "28800"    
-          "38400"    
-          "57600"    
-          "74880"    
-          "115200"   
-          "128000"   
-          "230400"   
-          "250000"   
-          "500000"   
-          "1000000"  
-          "2000000"  
-          "Custom"   
+        # If multiple boards, let the user choose
+        echo -e "${C_YELLOW}Multiple boards detected. Please select one:${C_RESET}"
+        local choice
+        choice=$( (echo "$board_list") | \
+            fzf --reverse --header="Select a board/port to monitor" --prompt="Selection: "
         )
-        
-        echo -e "${C_GREEN}==> Select a baud rate (default: ${DEFAULT_BAUD}):${C_RESET}"
 
-        if command -v fzf &>/dev/null; then
-            BAUD=$(printf "%s\n" "${baud_rates[@]}" | fzf \
-                --reverse \
-                --cycle \
-                --height=40% \
-                --prompt="Baud Rate > " \
-                --border \
-                --color=prompt:green)
+        if [[ -n "$choice" ]]; then
+            selected_port=$(echo "$choice" | awk '{print $1}')
+            PORT="$selected_port" # Update global state
         else
-            select choice in "${baud_rates[@]}" "Cancel"; do
-                if [[ "$choice" == "Cancel" ]]; then
-                    return
-                fi
-                BAUD="$choice"
-                break
-            done
-        fi
-
-        if [[ "$BAUD" == "Custom" ]]; then
-            read -rp "Enter custom baud rate: " custom_baud
-            BAUD="${custom_baud:-$DEFAULT_BAUD}"
-            [[ -z "$custom_baud" ]] && echo -e "${C_YELLOW}No custom baud rate entered, using default: ${BAUD}${C_RESET}"
-        elif [[ -z "$BAUD" ]]; then
-            BAUD="$DEFAULT_BAUD"
-            echo -e "${C_YELLOW}No baud rate selected, using default: ${BAUD}${C_RESET}"
+            echo -e "${C_RED}No selection made. Aborting.${C_RESET}"
+            press_enter_to_continue
+            return
         fi
     fi
 
-    echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT:-$DEFAULT_PORT} at ${BAUD} baud...${C_RESET}"
+    # 2. Select baud rate
+    local current_baud="${BAUD:-$DEFAULT_BAUD}"
+    echo -e "${C_GREEN}==> Select a baud rate (current: ${C_YELLOW}$current_baud${C_GREEN})${C_RESET}"
+
+    local baud_rates=(
+      "9600"
+      "19200"
+      "38400"
+      "57600"
+      "74880"
+      "115200"
+      "230400"
+      "250000"
+      "500000"
+      "1000000"
+      "Custom"
+    )
+
+    local selected_baud
+
+    if command -v fzf &>/dev/null; then
+        selected_baud=$(printf "%s\n" "${baud_rates[@]}" | fzf \
+            --reverse \
+            --cycle \
+            --height=40% \
+            --prompt="Select Baud Rate > " \
+            --border \
+            --color=prompt:green \
+            --query="$current_baud")
+    else
+        # For the select menu, create a new array with the current value marked.
+        local menu_options=()
+        for rate in "${baud_rates[@]}"; do
+            if [[ "$rate" == "$current_baud" ]]; then
+                menu_options+=("$rate <== current")
+            else
+                menu_options+=("$rate")
+            fi
+        done
+        menu_options+=("Cancel")
+
+        select choice in "${menu_options[@]}"; do
+            if [[ "$choice" == "Cancel" ]]; then
+                return
+            fi
+            # Remove the marker before setting the baud rate
+            selected_baud=${choice% *<==*}
+            break
+        done
+    fi
+
+    if [[ -z "$selected_baud" ]]; then
+        echo -e "${C_YELLOW}No baud rate selected, using current: $current_baud${C_RESET}"
+        # BAUD remains unchanged
+    elif [[ "$selected_baud" == "Custom" ]]; then
+        read -rp "Enter custom baud rate: " custom_baud
+        if [[ -n "$custom_baud" ]]; then
+            BAUD="$custom_baud"
+        else
+            echo -e "${C_YELLOW}No custom baud rate entered, using current: $current_baud${C_RESET}"
+        fi
+    else
+        BAUD="$selected_baud"
+    fi
+
+    # 3. Open monitor
+    echo -e "${C_GREEN}==> Opening Serial Monitor on port ${PORT} at ${BAUD} baud...${C_RESET}"
     echo -e "${C_YELLOW}(Press Ctrl+C to exit)${C_RESET}"
     sleep 1
 
     # Execute monitor directly for interactive session
-    arduino-cli monitor -p "${PORT:-$DEFAULT_PORT}" --config "baudrate=${BAUD}"
+    arduino-cli monitor -p "${PORT}" --config "baudrate=${BAUD}"
     
     echo # Add a newline for better formatting after monitor exits
     press_enter_to_continue
@@ -492,11 +560,12 @@ function open_serial() {
 function edit_project_nvim() {
     print_header
     if [[ -z "$PROJECT" || "$PROJECT" == "$DEFAULT_PROJECT" ]]; then
-    echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
-    select_or_create_project
-    edit_project_nvim
-        sleep 1
-        return
+        echo -e "${C_RED}No project selected. Please select a project first.${C_RESET}"
+        select_or_create_project
+        # If user cancelled, PROJECT is still empty. Return to menu.
+        if [[ -z "$PROJECT" || "$PROJECT" == "$DEFAULT_PROJECT" ]]; then
+            return
+        fi
     fi
 
     if ! command -v nvim &> /dev/null; then
@@ -652,49 +721,58 @@ function install_core() {
 function main_menu() {
     while true; do
         print_header
-        echo -e " ${C_BLUE}1.${C_RESET} ${C_BLUE}S${C_RESET}elect/Create Project          ${C_BLUE}6.${C_RESET}  ${C_BLUE}L${C_RESET}ist ${C_BLUE}I${C_RESET}nstalled Cores"
-        echo -e " ${C_BLUE}2.${C_RESET} Select ${C_BLUE}B${C_RESET}oard (FQBN)            ${C_BLUE}7.${C_RESET}  ${C_BLUE}L${C_RESET}ist ${C_BLUE}a${C_RESET}ll Boards"
-        echo -e " ${C_BLUE}3.${C_RESET} Select ${C_BLUE}P${C_RESET}ort                    ${C_BLUE}8.${C_RESET}  ${C_BLUE}I${C_RESET}nstall a Core"
-        echo -e " ${C_BLUE}4.${C_RESET} ${C_BLUE}C${C_RESET}ompile Current Project        ${C_BLUE}9.${C_RESET}  ${C_BLUE}O${C_RESET}pen Serial Monitor"
-        echo -e " ${C_BLUE}5. U${C_RESET}pload a Project               ${C_BLUE}10. E${C_RESET}dit Project (nvim)"
+        echo -e " ${C_YELLOW}1 (S)${C_RESET} Select/Create Project    "
+        echo -e " ${C_YELLOW}2 (B)${C_RESET} Select Board (FQBN)      "
+        echo -e " ${C_YELLOW}3 (P)${C_RESET} Select Port              "
+        echo -e " ${C_YELLOW}5 (U)${C_RESET} Upload Project           "
+        echo -e " ${C_YELLOW}4 (C)${C_RESET} Compile Project          "
+        echo -e " ${C_YELLOW}6 (L)${C_RESET} List Installed Cores     "
+        echo -e " ${C_YELLOW}7 (A)${C_RESET} List All Supported Boards"
+        echo -e " ${C_YELLOW}8 (I)${C_RESET} Install Core             " 
+        echo -e " ${C_YELLOW}9 (M)${C_RESET} Open Serial Monitor      "
+        echo -e " ${C_YELLOW}0 (E)${C_RESET} Edit Project (nvim)      "
+        echo " ─────────────────────────────────────────────────────────"
+        
+        local update_prompt=""
         if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
-            echo -e "\n ${C_YELLOW}UU. Update Script to v$LATEST_VERSION${C_RESET}"
+            update_prompt="(${C_YELLOW}V${C_RESET}) Update to v$LATEST_VERSION"
         fi
-        echo 
-        echo -e " ${C_RED}0. Exit${C_RESET}"
-        echo "───────────────────────────────────────────────────────────"
-        read -rp "Choose option: " option
+        
+        echo -e " ${update_prompt}${update_prompt:+, }(${C_RED}Q${C_RESET}) Quit"
+        echo " ─────────────────────────────────────────────────────────"
 
-# ----------------------------------------------------------
+        read -rp "Enter your choice: " -n 1 option
+        echo
+
         case $option in
-        1) select_or_create_project ;;
-        2) select_board ;;
-        3) select_port ;;
-        4) compile_sketch ;;
-        5) upload_sketch ;;
-        6) list_installed_cores ;;
-        7) list_all_supported_boards ;;
-        8) install_core ;;
-        9) open_serial ;;
-        10) edit_project_nvim ;;
-# -------------------shortcut------------------------------
-        [sS])select_or_create_project ;;
-        [bB])select_board ;;
-        [pP])select_port ;;
-        [cC])compile_sketch;;
-        [uU])upload_sketch ;;
-        [lL][iI])list_installed_cores ;;
-        [oO])open_serial ;;
-        [iI])install_core ;;
-        [lL][aA])list_all_supported_boards ;;
-        [eE])edit_project_nvim;;
-        [uU][uU]) update_script ;;
-# ----------------------------------------------------------
-        0) clear; echo "Goodbye Genius! V$VERSION"; break ;;
-        *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
+            [1sS]) select_or_create_project ;;
+            [2bB]) select_board ;;
+            [3pP]) select_port ;;
+            [4cC]) compile_sketch ;;
+            [5uU]) upload_sketch ;;
+
+            [6lL]) list_installed_cores ;;
+            [7aA]) list_all_supported_boards ;;
+            [8iI]) install_core ;;
+            [9mM]) open_serial ;;
+            [0eE]) edit_project_nvim ;;
+
+            [vV]) 
+                if [[ -n "$LATEST_VERSION" && "$LATEST_VERSION" != "$VERSION" ]]; then
+                    update_script
+                else
+                    echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1
+                fi
+                ;;
+
+            [qQ]) clear; echo "Goodbye! V$VERSION"; break ;;
+            *) echo -e "${C_RED}Invalid option.${C_RESET}"; sleep 1 ;;
         esac
     done
 }
+
+
+
 
 # --- Initialization ---
 check_dependencies
