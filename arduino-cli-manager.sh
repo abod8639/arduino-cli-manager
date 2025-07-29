@@ -482,67 +482,74 @@ function open_serial() {
 
     # 2. Select baud rate
     local current_baud="${BAUD:-$DEFAULT_BAUD}"
-    echo -e "${C_GREEN}==> Select a baud rate (current: ${C_YELLOW}$current_baud${C_GREEN})${C_RESET}"
+    local use_current_prompt="Current baud rate (${C_YELLOW}$current_baud${C_RESET})؟ [Y/n]: "
+    read -rp "$(echo -e "$use_current_prompt")" use_current
+    echo
 
-    local baud_rates=(
-      "9600"
-      "19200"
-      "38400"
-      "57600"
-      "74880"
-      "115200"
-      "230400"
-      "250000"
-      "500000"
-      "1000000"
-      "Custom"
-    )
+    if [[ "$use_current" =~ ^[Nn]$ ]]; then
+        echo -e "${C_GREEN}==> Select a baud rate (current: ${C_YELLOW}$current_baud${C_GREEN})${C_RESET}"
 
-    local selected_baud
+        local baud_rates=(
+        "9600"
+        "19200"
+        "38400"
+        "57600"
+        "74880"
+        "115200"
+        "230400"
+        "250000"
+        "500000"
+        "1000000"
+        "Custom"
+        )
 
-    if command -v fzf &>/dev/null; then
-        selected_baud=$(printf "%s\n" "${baud_rates[@]}" | fzf \
-            --reverse \
-            --cycle \
-            --height=40% \
-            --prompt="Select Baud Rate > " \
-            --border \
-            --color=prompt:green \
-            --query="$current_baud")
-    else
-        # For the select menu, create a new array with the current value marked.
-        local menu_options=()
-        for rate in "${baud_rates[@]}"; do
-            if [[ "$rate" == "$current_baud" ]]; then
-                menu_options+=("$rate <== current")
-            else
-                menu_options+=("$rate")
-            fi
-        done
-        menu_options+=("Cancel")
+        local selected_baud
 
-        select choice in "${menu_options[@]}"; do
-            if [[ "$choice" == "Cancel" ]]; then
-                return
-            fi
-            # Remove the marker before setting the baud rate
-            selected_baud=${choice% *<==*}
-            break
-        done
-    fi
-
-    if [[ -z "$selected_baud" ]]; then
-        echo -e "${C_YELLOW}No baud rate selected, using current: $current_baud${C_RESET}"
-        # BAUD remains unchanged
-    elif [[ "$selected_baud" == "Custom" ]]; then
-        read -rp "Enter custom baud rate: " custom_baud
-        if [[ -n "$custom_baud" ]]; then
-            BAUD="$custom_baud"
+        if command -v fzf &>/dev/null; then
+            selected_baud=$(printf "%s\n" "${baud_rates[@]}" | fzf \
+                --reverse \
+                --cycle \
+                --height=50% \
+                --prompt="Current baud rate " \
+                --header="Select a baud rate" \
+                --border \
+                --color=prompt:green \
+                --query=" ")
         else
-            echo -e "${C_YELLOW}No custom baud rate entered, using current: $current_baud${C_RESET}"
+            # For the select menu, create a new array with the current value marked.
+            local menu_options=()
+            for rate in "${baud_rates[@]}"; do
+                if [[ "$rate" == "$current_baud" ]]; then
+                    menu_options+=("$rate <== current")
+                else
+                    menu_options+=("$rate")
+                fi
+            done
+            menu_options+=("Cancel")
+
+            select choice in "${menu_options[@]}"; do
+                if [[ "$choice" == "Cancel" ]]; then
+                    return
+                fi
+                # Remove the marker before setting the baud rate
+                selected_baud=${choice% *<==*}
+                break
+            done
         fi
-    else
-        BAUD="$selected_baud"
+
+        if [[ -z "$selected_baud" ]]; then
+            echo -e "${C_YELLOW}لم يتم اختيار معدل باود، سيتم استخدام الحالي: $current_baud${C_RESET}"
+            # BAUD remains unchanged
+        elif [[ "$selected_baud" == "Custom" ]]; then
+            read -rp "ادخل معدل باود مخصص: " custom_baud
+            if [[ -n "$custom_baud" ]]; then
+                BAUD="$custom_baud"
+            else
+                echo -e "${C_YELLOW}لم يتم إدخال معدل باود مخصص، سيتم استخدام الحالي: $current_baud${C_RESET}"
+            fi
+        else
+            BAUD="$selected_baud"
+        fi
     fi
 
     # 3. Open monitor
@@ -579,7 +586,7 @@ function edit_project_nvim() {
     project_name=$(basename "$PROJECT")
 
     echo -e "${C_GREEN}==> Opening project '${project_name}' in nvim...${C_RESET}"
-    sleep 1
+    # sleep 1
     
     # Change to the project directory and open the main .ino file
     (
@@ -750,7 +757,6 @@ function main_menu() {
             [3pP]) select_port ;;
             [4cC]) compile_sketch ;;
             [5uU]) upload_sketch ;;
-
             [6lL]) list_installed_cores ;;
             [7aA]) list_all_supported_boards ;;
             [8iI]) install_core ;;

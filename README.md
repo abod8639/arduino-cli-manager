@@ -58,9 +58,11 @@ For detailed instructions on how to install dependencies and use the tool, pleas
 Before you begin, make sure you have the following installed:
 
 - **bash**: The script runs in bash shell (default on most Unix-like systems)
-- **arduino-cli**: The Arduino command-line interface
-- **fzf** (optional but recommended): For enhanced interactive selection
-- **nvim** (optional): For integrated project editing
+- **arduino-cli**: The Arduino command-line interface (required)
+- **jq**: Used for update checks and version management (optional, but recommended)
+- **fzf**: For enhanced interactive selection (optional but recommended)
+- **nvim**: For integrated project editing (optional)
+- **curl**: Used with jq for update checks (optional)
 
 ## Installation
 
@@ -93,22 +95,27 @@ arduino-cli core install esp32:esp32
 arduino-cli core install arduino:samd
 ```
 
-### Step 3: `fzf` (Highly Recommended)
+### Step 3: Optional Dependencies
 
-For the best experience, install the command-line fuzzy finder `fzf`. The script will automatically use it to create powerful interactive menus.
+For the best experience, install these additional tools:
+
+#### fzf (Highly Recommended)
+The command-line fuzzy finder creates powerful interactive menus:
 
 - **On Debian/Ubuntu:**
   ```bash
-  sudo apt install fzf
+  sudo apt install fzf jq curl
   ```
 - **On macOS (using Homebrew):**
   ```bash
-  brew install fzf
+  brew install fzf jq curl
   ```
 - **On Arch Linux:**
   ```bash
-  sudo pacman -S fzf
+  sudo pacman -S fzf jq curl
   ```
+
+The script will fall back to simple menus if `fzf` is not available, and skip update checks if `jq` or `curl` are missing.
 
 ## How to Use
 
@@ -151,13 +158,18 @@ You will be greeted by the main menu, which always displays your current setting
  Port:     /dev/ttyACM1
  Baud:     115200
 ───────────────────────────────────────────────────────────
-1. Select/Create Project          6.  List Installed Cores
-2. Select Board (FQBN)            7.  List All Boards
-3. Select Port                    8.  Install a Core
-4. Compile Current Project        9.  Open Serial Monitor
-5. Upload a Project               10. Edit Project (nvim)
-
-0. Exit
+ 1 (S) Select/Create Project    
+ 2 (B) Select Board (FQBN)      
+ 3 (P) Select Port              
+ 5 (U) Upload Project           
+ 4 (C) Compile Project          
+ 6 (L) List Installed Cores     
+ 7 (A) List All Supported Boards
+ 8 (I) Install Core             
+ 9 (M) Open Serial Monitor      
+ 0 (E) Edit Project (nvim) 
+───────────────────────────────────────────────────────────
+ (Q) Quit
 ───────────────────────────────────────────────────────────
 Choose option: 
 ```
@@ -178,19 +190,19 @@ Choose option:
 
 ### Keyboard Shortcuts
 
-For faster access, you can use the following keyboard shortcuts instead of menu numbers:
+For faster access, you can use the following keyboard shortcuts instead of menu numbers. All shortcuts are case-insensitive:
 
-- **s** or **S**: Select/Create Project
-- **b** or **B**: Select Board (FQBN)
-- **p** or **P**: Select Port
-- **c** or **C**: Compile Current Project
-- **u** or **U**: Upload Project
-- **li** or **LI**: List Installed Cores
-- **la** or **LA**: List All Boards
-- **i** or **I**: Install Core
-- **o** or **O**: Open Serial Monitor
-- **e** or **E**: Edit Project (nvim)
-- **uu** or **UU**: Update Script (when update is available)
+- **s**: Select/Create Project
+- **b**: Select Board (FQBN)
+- **p**: Select Port
+- **c**: Compile Current Project
+- **u**: Upload Project
+- **l**: List Installed Cores
+- **a**: List All Boards
+- **i**: Install Core
+- **m**: Open Serial Monitor
+- **e**: Edit Project (nvim)
+- **v**: Update Script (when update is available)
 
 ### Configuration
 
@@ -207,22 +219,22 @@ SKETCH_DIR="$HOME/Arduino"
 
 ### Creating a New Project
 
-1. Select option `1` from the main menu
+1. Select option `S` from the main menu
 2. Choose "CREATE NEW PROJECT" from the list
 3. Enter your project name
 4. The script will create a properly structured Arduino sketch
 
 ### Uploading to a Board
 
-1. Use option `2` to select your board type (FQBN)
-2. Use option `3` to select the correct serial port
-3. Select option `5` to upload
+1. Use option `B` to select your board type (FQBN)
+2. Use option ` p` to select the correct serial port
+3. Select option `U` to upload
 4. Choose your project if not already selected
 
 ### Monitoring Serial Output
 
-1. Ensure correct port is selected (option `3`)
-2. Use option `9` to open the serial monitor
+1. Ensure correct port is selected (option `B`)
+2. Use option `M` to open the serial monitor
 3. Press Ctrl+C to exit the monitor when done
 
 ## License
