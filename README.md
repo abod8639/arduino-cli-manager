@@ -152,12 +152,12 @@ You will be greeted by the main menu, which always displays your current setting
  │                                                        │       
  │ Select board, serial, compile, upload & monitor easily │       
  └────────────────────────────────────────────────────────┘       
-───────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────
  Project:  Not Selected
  Board:    esp32:esp32:esp32 
  Port:     /dev/ttyACM1
  Baud:     115200
-───────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────
  1 (S) Select/Create Project    
  2 (B) Select Board (FQBN)      
  3 (P) Select Port              
@@ -168,9 +168,9 @@ You will be greeted by the main menu, which always displays your current setting
  8 (I) Install Core             
  9 (M) Open Serial Monitor      
  0 (E) Edit Project (nvim) 
-───────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────
  (Q) Quit
-───────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────
 Choose option: 
 ```
 
