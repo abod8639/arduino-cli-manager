@@ -437,103 +437,119 @@ function upload_sketch() {
         fi
     fi
 
-    # 2. Detect and select port for upload
-    echo -e "${C_GREEN}==> Detecting connected boards for upload...${C_RESET}"
-    local board_list
-    board_list=$(run_arduino_cli_command board list | awk 'NR>1')
+    local upload_port
+    local upload_fqbn
 
-    if [ -z "$board_list" ]; then
-        echo -e "${C_RED}No connected boards found. Cannot upload.${C_RESET}"
-        press_enter_to_continue
-        return
-    fi
+    # 2. Check if we're doing OTA upload
+    if [[ "$PORT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # For OTA upload, use the currently selected FQBN and PORT
+        upload_port="$PORT"
+        upload_fqbn="${FQBN:-$DEFAULT_FQBN}"
+        echo -e "${C_GREEN}Using IP address for OTA upload: ${C_YELLOW}${upload_port}${C_RESET}"
+        echo -e "${C_GREEN}Using FQBN: ${C_YELLOW}${upload_fqbn}${C_RESET}"
 
-    local upload_port=""
-    local upload_fqbn=""
-    
-    if [ "$(echo "$board_list" | wc -l)" -eq 1 ]; then
-        upload_port=$(echo "$board_list" | awk '{print $1}')
-        upload_fqbn=$(echo "$board_list" | awk '{print $(NF-1)}')
-        echo -e "${C_GREEN}Auto-selected port: ${C_YELLOW}${upload_port}${C_RESET}"
-    else
-        echo -e "${C_YELLOW}Multiple boards detected. Please select one for upload:${C_RESET}"
-        
-        # Format board information for display
-        local formatted_list=""
-        while IFS= read -r line; do
-            local port=$(echo "$line" | awk '{print $1}')
-            local board_name=$(echo "$line" | awk -F'[()]' '{print $2}')
-            local fqbn=$(echo "$line" | awk '{print $(NF-1)}')
-            formatted_list+="Port: ${port} | Board: ${board_name} | FQBN: ${fqbn}\n"
-        done <<< "$board_list"
-
-        local choice
-        if command -v fzf &> /dev/null; then
-            choice=$( (echo -e "$formatted_list") | \
-                fzf --height=50% \
-                    --reverse \
-                    --header="Use arrows to move, Enter to select" \
-                    --prompt="Select board > " \
-                    --ansi
-            )
-        else
-            echo -e "${C_GREEN}==> Available boards:${C_RESET}"
-            echo -e "$formatted_list"
-            
-            local -a options
-            while IFS= read -r line; do
-                options+=("$line")
-            done <<< "$board_list"
-            
-            select opt in "${options[@]}" "Cancel"; do
-                if [[ "$opt" == "Cancel" ]]; then
-                    return 1
-                elif [[ -n "$opt" ]]; then
-                    choice="Port: $(echo "$opt" | awk '{print $1}') | Board: $(echo "$opt" | awk -F'[()]' '{print $2}') | FQBN: $(echo "$opt" | awk '{print $(NF-1)}')"
-                    break
-                fi
-            done
+        # Compile first for OTA, directing output to a 'build' folder
+        echo -e "${C_GREEN}==> Compiling sketch '${project_to_upload##*/}' for OTA...${C_RESET}"
+        if ! arduino-cli compile --fqbn "$upload_fqbn" --output-dir "$project_to_upload/build" "$project_to_upload"; then
+            echo -e "${C_RED}Error: Compilation failed. Please check the output above.${C_RESET}"
+            press_enter_to_continue
+            return
         fi
 
-        if [[ -n "$choice" ]]; then
-            # Extract port and FQBN from the formatted choice
-            upload_port=$(echo "$choice" | sed -n 's/.*Port: \([^ ]*\).*/\1/p')
-            upload_fqbn=$(echo "$choice" | sed -n 's/.*FQBN: \([^ ]*\).*/\1/p')
+        # Perform OTA upload using the compiled artifacts
+        echo -e "${C_GREEN}==> Performing OTA upload to ${C_YELLOW}${upload_port}${C_RESET}...${C_RESET}"
+        if ! arduino-cli upload --fqbn "$upload_fqbn" -p "$upload_port" "$project_to_upload" -v --input-dir "$project_to_upload/build"; then
+            echo -e "${C_RED}Error: OTA upload failed. Please check the output above.${C_RESET}"
+            echo -e "${C_YELLOW}Make sure the device is powered on and connected to the network.${C_RESET}"
+            echo -e "${C_YELLOW}Also verify that OTA is enabled in your sketch.${C_RESET}"
+            press_enter_to_continue
+            return
+        fi
+
+    else
+        # Regular USB upload - detect and select port
+        echo -e "${C_GREEN}==> Detecting connected boards for upload...${C_RESET}"
+        local board_list
+        board_list=$(run_arduino_cli_command board list | awk 'NR>1')
+
+        if [ -z "$board_list" ]; then
+            echo -e "${C_RED}No connected boards found. Cannot upload.${C_RESET}"
+            press_enter_to_continue
+            return
+        fi
+    
+        if [ "$(echo "$board_list" | wc -l)" -eq 1 ]; then
+            upload_port=$(echo "$board_list" | awk '{print $1}')
+            upload_fqbn=$(echo "$board_list" | awk '{print $(NF-1)}')
+            echo -e "${C_GREEN}Auto-selected port: ${C_YELLOW}${upload_port}${C_RESET}"
         else
-            echo -e "${C_RED}No selection made. Aborting upload.${C_RESET}"
+            echo -e "${C_YELLOW}Multiple boards detected. Please select one for upload:${C_RESET}"
+            
+            local formatted_list=""
+            while IFS= read -r line; do
+                local port=$(echo "$line" | awk '{print $1}')
+                local board_name=$(echo "$line" | awk -F'[()]' '{print $2}')
+                local fqbn=$(echo "$line" | awk '{print $(NF-1)}')
+                formatted_list+="Port: ${port} | Board: ${board_name} | FQBN: ${fqbn}\n"
+            done <<< "$board_list"
+
+            local choice
+            if command -v fzf &> /dev/null; then
+                choice=$( (echo -e "$formatted_list") | \
+                    fzf --height=50% --reverse --header="Use arrows to move, Enter to select" \
+                        --prompt="Select board > " --ansi )
+            else
+                echo -e "${C_YELLOW}Tip: Install 'fzf' for a better selection experience.${C_RESET}"
+                echo -e "${C_GREEN}==> Available boards:${C_RESET}"
+                echo -e "$formatted_list"
+                local -a options
+                while IFS= read -r line; do options+=("$line"); done <<< "$board_list"
+                select opt in "${options[@]}" "Cancel"; do
+                    if [[ "$opt" == "Cancel" ]]; then return 1;
+                    elif [[ -n "$opt" ]]; then
+                        choice="Port: $(echo "$opt" | awk '{print $1}') | Board: $(echo "$opt" | awk -F'[()]' '{print $2}') | FQBN: $(echo "$opt" | awk '{print $(NF-1)}')"
+                        break
+                    fi
+                done
+            fi
+
+            if [[ -n "$choice" ]]; then
+                upload_port=$(echo "$choice" | sed -n 's/.*Port: \([^ ]*\).*/\1/p')
+                upload_fqbn=$(echo "$choice" | sed -n 's/.*FQBN: \([^ ]*\).*/\1/p')
+            else
+                echo -e "${C_RED}No selection made. Aborting upload.${C_RESET}"
+                press_enter_to_continue
+                return
+            fi
+        fi
+        
+        # For regular upload, compile and upload in one step
+        echo -e "${C_GREEN}==> Compiling and uploading to port ${C_YELLOW}${upload_port}${C_RESET}...${C_RESET}"
+        if ! arduino-cli upload --fqbn "$upload_fqbn" -p "$upload_port" "$project_to_upload" -v; then
+            echo -e "${C_RED}Error: Upload failed. Please check the output above.${C_RESET}"
             press_enter_to_continue
             return
         fi
     fi
-    
-    # Update global state just for this operation
+
+    # Update global state with the used values
     PORT="$upload_port"
     FQBN="$upload_fqbn"
-
-    # 3. Compile and Upload
-    echo -e "${C_GREEN}==> Compiling sketch '${project_to_upload##*/}' for FQBN ${C_YELLOW}${FQBN}${C_RESET}...${C_RESET}"
-    if ! arduino-cli compile --fqbn "$FQBN" "$project_to_upload"; then
-        echo -e "${C_RED}Error: Compilation failed. Please check the output above.${C_RESET}"
-        press_enter_to_continue
-        return
-    fi
-
-    echo -e "${C_GREEN}==> Uploading to port ${C_YELLOW}${PORT}${C_RESET}...${C_RESET}"
-    if ! arduino-cli upload --fqbn "$FQBN" -p "$PORT" "$project_to_upload" -v; then
-        echo -e "${C_RED}Error: Upload failed. Please check the output above.${C_RESET}"
-        press_enter_to_continue
-        return
-    fi
+    save_config  # Save the successful configuration
     
-    # echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
+    echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
     
-    # # 4. Ask to open serial monitor
-    # read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
-    # if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
-    #     open_serial
-    # else
-    #     press_enter_to_continue
-    # fi
+    # Ask to open serial monitor, but not for OTA
+    if ! [[ "$upload_port" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
+        if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
+            open_serial
+        else
+            press_enter_to_continue
+        fi
+    else
+        press_enter_to_continue
+    fi
 }
 
 function open_serial() {
