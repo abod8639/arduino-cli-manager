@@ -457,14 +457,48 @@ function upload_sketch() {
         echo -e "${C_GREEN}Auto-selected port: ${C_YELLOW}${upload_port}${C_RESET}"
     else
         echo -e "${C_YELLOW}Multiple boards detected. Please select one for upload:${C_RESET}"
+        
+        # Format board information for display
+        local formatted_list=""
+        while IFS= read -r line; do
+            local port=$(echo "$line" | awk '{print $1}')
+            local board_name=$(echo "$line" | awk -F'[()]' '{print $2}')
+            local fqbn=$(echo "$line" | awk '{print $(NF-1)}')
+            formatted_list+="Port: ${port} | Board: ${board_name} | FQBN: ${fqbn}\n"
+        done <<< "$board_list"
+
         local choice
-        choice=$( (echo "$board_list") | \
-            fzf --reverse --header="Select a board/port to upload to" --prompt="Selection: "
-        )
+        if command -v fzf &> /dev/null; then
+            choice=$( (echo -e "$formatted_list") | \
+                fzf --height=50% \
+                    --reverse \
+                    --header="Use arrows to move, Enter to select" \
+                    --prompt="Select board > " \
+                    --ansi
+            )
+        else
+            echo -e "${C_GREEN}==> Available boards:${C_RESET}"
+            echo -e "$formatted_list"
+            
+            local -a options
+            while IFS= read -r line; do
+                options+=("$line")
+            done <<< "$board_list"
+            
+            select opt in "${options[@]}" "Cancel"; do
+                if [[ "$opt" == "Cancel" ]]; then
+                    return 1
+                elif [[ -n "$opt" ]]; then
+                    choice="Port: $(echo "$opt" | awk '{print $1}') | Board: $(echo "$opt" | awk -F'[()]' '{print $2}') | FQBN: $(echo "$opt" | awk '{print $(NF-1)}')"
+                    break
+                fi
+            done
+        fi
 
         if [[ -n "$choice" ]]; then
-            upload_port=$(echo "$choice" | awk '{print $1}')
-            upload_fqbn=$(echo "$choice" | awk '{print $(NF-1)}')
+            # Extract port and FQBN from the formatted choice
+            upload_port=$(echo "$choice" | sed -n 's/.*Port: \([^ ]*\).*/\1/p')
+            upload_fqbn=$(echo "$choice" | sed -n 's/.*FQBN: \([^ ]*\).*/\1/p')
         else
             echo -e "${C_RED}No selection made. Aborting upload.${C_RESET}"
             press_enter_to_continue
