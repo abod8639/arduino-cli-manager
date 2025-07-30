@@ -8,7 +8,7 @@
 # See the LICENSE file for details.
 
 # --- Configuration ---
-VERSION="1.0.8" # Script version
+VERSION="1.0.8 #4" # Script version
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
@@ -539,17 +539,7 @@ function upload_sketch() {
     
     echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
     
-    # Ask to open serial monitor, but not for OTA
-    if ! [[ "$upload_port" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
-        if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
-            open_serial
-        else
-            press_enter_to_continue
-        fi
-    else
-        press_enter_to_continue
-    fi
+
 }
 
 function open_serial() {
