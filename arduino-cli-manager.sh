@@ -255,31 +255,84 @@ function select_port() {
     echo -e "${C_GREEN}==> Detecting connected boards...${C_RESET}"
     
     local board_list
-    board_list=$(run_arduino_cli_command board list | awk 'NR>1')
-
-    if [ -z "$board_list" ]; then
-        echo -e "${C_RED}No connected boards found. Using default port: $DEFAULT_PORT${C_RESET}"
-        PORT="$DEFAULT_PORT"
-        sleep 1
-        return
+    # Use run_arduino_cli_command for better error handling
+    if ! board_list=$(run_arduino_cli_command board list | awk 'NR>1'); then
+        echo -e "${C_RED}Failed to detect boards. Please check your connections.${C_RESET}"
+        press_enter_to_continue
+        return 1
     fi
 
-    # If multiple boards, let the user choose
-    echo -e "${C_YELLOW}Multiple boards detected. Please select one:${C_RESET}"
+    if [ -z "$board_list" ]; then
+        echo -e "${C_RED}No connected boards found.${C_RESET}"
+        local use_default
+        read -rp "$(echo -e "Use default port ${C_YELLOW}$DEFAULT_PORT${C_RESET}? [Y/n]: ")" use_default
+        if [[ -z "$use_default" || "$use_default" =~ ^[Yy]$ ]]; then
+            PORT="$DEFAULT_PORT"
+            echo -e "${C_GREEN}Using default port: ${C_YELLOW}$DEFAULT_PORT${C_RESET}"
+            save_config # Save the port selection to config
+            sleep 1
+            return 0
+        fi
+        return 1
+    fi
+
+    # Format board information for display
+    local formatted_list=""
+    while IFS= read -r line; do
+        local port=$(echo "$line" | awk '{print $1}')
+        local board_name=$(echo "$line" | awk -F'[()]' '{print $2}')
+        local fqbn=$(echo "$line" | awk '{print $(NF-1)}')
+        formatted_list+="Port: ${port} | Board: ${board_name} | FQBN: ${fqbn}\n"
+    done <<< "$board_list"
+
     local choice
-    choice=$( (echo "$board_list") | \
-        fzf --height=50%\ --reverse --header="Select a board/port" --prompt="Selection: "
-    )
+    if command -v fzf &> /dev/null; then
+        # Use fzf if available for better UX
+        echo -e "${C_GREEN}==> Select a board:${C_RESET}"
+        choice=$( (echo -e "$formatted_list") | \
+            fzf --height=50% \
+                --reverse \
+                --header="Use arrows to move, Enter to select" \
+                --prompt="Select board > " \
+                --ansi
+        )
+    else
+        # Fallback to simple select menu
+        echo -e "${C_YELLOW}Tip: Install 'fzf' for a better selection experience.${C_RESET}"
+        echo -e "${C_GREEN}==> Available boards:${C_RESET}"
+        echo -e "$formatted_list"
+        
+        local -a options
+        while IFS= read -r line; do
+            options+=("$line")
+        done <<< "$board_list"
+        
+        select opt in "${options[@]}" "Cancel"; do
+            if [[ "$opt" == "Cancel" ]]; then
+                return 1
+            elif [[ -n "$opt" ]]; then
+                choice="Port: $(echo "$opt" | awk '{print $1}') | Board: $(echo "$opt" | awk -F'[()]' '{print $2}') | FQBN: $(echo "$opt" | awk '{print $(NF-1)}')"
+                break
+            fi
+        done
+    fi
 
     if [[ -n "$choice" ]]; then
-        PORT=$(echo "$choice" | awk '{print $1}')
-        FQBN=$(echo "$choice" | awk '{print $(NF-1)}')
-        echo -e "${C_GREEN}Selected port: ${C_YELLOW}${PORT}${C_RESET}"
-        echo -e "${C_GREEN}Selected FQBN: ${C_YELLOW}${FQBN}${C_RESET}"
+        # Extract port and FQBN from the formatted choice
+        PORT=$(echo "$choice" | sed -n 's/.*Port: \([^ ]*\).*/\1/p')
+        FQBN=$(echo "$choice" | sed -n 's/.*FQBN: \([^ ]*\).*/\1/p')
+        
+        echo -e "\n${C_GREEN}Selected:${C_RESET}"
+        echo -e "${C_CYAN}Port:${C_RESET} ${C_YELLOW}${PORT}${C_RESET}"
+        echo -e "${C_CYAN}FQBN:${C_RESET} ${C_YELLOW}${FQBN}${C_RESET}"
+        
+        save_config # Save the port selection to config
         sleep 1
+        return 0
     else
         echo -e "${C_RED}No selection made.${C_RESET}"
         sleep 1
+        return 1
     fi
 }
 
