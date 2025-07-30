@@ -8,7 +8,7 @@
 # See the LICENSE file for details.
 
 # --- Configuration ---
-VERSION="1.0.8#4" # Script version
+VERSION="1.0.8" # Script version
 DEFAULT_FQBN="esp32:esp32:esp32"
 DEFAULT_PORT="/dev/ttyACM1"
 DEFAULT_BAUD="115200"
@@ -16,7 +16,7 @@ DEFAULT_PROJECT="Not Selected"
 SKETCH_DIR="$HOME/Arduino"
 CONFIG_FILE="$HOME/.arduino-cli-manager.conf"
 
-
+ 
 # --- Colors ---
 C_RESET='\033[0m'
 C_RED='\033[0;31m'
