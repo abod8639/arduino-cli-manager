@@ -185,8 +185,8 @@ Choose option:
 - **7. List All Boards**: Lists every board supported by your installed cores, useful for finding the correct FQBN.
 - **8. Install a Core**: Helps you install additional board support packages.
 - **9. Open Serial Monitor**: Connects to the selected port to view `Serial.print()` output from your board.
-- **10. Edit Project (nvim)**: Opens the current project in Neovim for editing.
-- **0. Exit**: Exits the script.
+- **0. Edit Project (nvim)**: Opens the current project in Neovim for editing.
+- **q. Exit**: Exits the script.
 
 ### Keyboard Shortcuts
 

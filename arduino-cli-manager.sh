@@ -85,12 +85,12 @@ function print_header() {
                  echo " │                                                        │"
                  echo " │ Select board, serial, compile, upload & monitor easily │"
               echo -e " └────────────────────────────────────────────────────────┘${C_RESET}"
-                        get_version_line
+                                          get_version_line
                  echo "────────────────────────────────────────────────────────────"
                  printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Project:" "${PROJECT:-$DEFAULT_PROJECT}"
-                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-$DEFAULT_FQBN}"
-                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-$DEFAULT_PORT}"
-                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-$DEFAULT_BAUD}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Board:"   "${FQBN:-   $DEFAULT_FQBN}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Port:"    "${PORT:-   $DEFAULT_PORT}"
+                 printf " ${C_YELLOW}%-12s${C_RESET} %s\n" "Baud:"    "${BAUD:-   $DEFAULT_BAUD}"
                  echo "────────────────────────────────────────────────────────────"
 }
 
@@ -438,15 +438,15 @@ function upload_sketch() {
         return
     fi
     
-    echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
+    # echo -e "${C_GREEN}Sketch '${project_to_upload##*/}' uploaded successfully!${C_RESET}"
     
-    # 4. Ask to open serial monitor
-    read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
-    if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
-        open_serial
-    else
-        press_enter_to_continue
-    fi
+    # # 4. Ask to open serial monitor
+    # read -rp "Do you want to open the serial monitor now? [Y/n]: " open_monitor
+    # if [[ -z "$open_monitor" || "$open_monitor" =~ ^[Yy]$ ]]; then
+    #     open_serial
+    # else
+    #     press_enter_to_continue
+    # fi
 }
 
 function open_serial() {
