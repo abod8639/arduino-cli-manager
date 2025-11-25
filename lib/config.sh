@@ -4,7 +4,7 @@
 # This file contains all configuration variables and constants
 
 # --- Version ---
-VERSION="1.0.9"
+VERSION="2.0.0"
 
 # --- Default Configuration ---
 DEFAULT_FQBN="esp32:esp32:esp32"

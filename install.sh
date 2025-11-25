@@ -131,7 +131,7 @@ fi
 
 echo ""
 echo -e "${C_GREEN}╔════════════════════════════════════════╗${C_RESET}"
-echo -e "${C_GREEN}║   Installation Successful! 🎉          ║${C_RESET}"
+echo -e "${C_GREEN}║        Installation Successful!        ║${C_RESET}"
 echo -e "${C_GREEN}╚════════════════════════════════════════╝${C_RESET}"
 echo ""
 echo "Next steps:"
