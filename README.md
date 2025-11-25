@@ -10,6 +10,8 @@
 
 This script is perfect for developers who prefer working in the terminal and want a more efficient way to compile, upload, and monitor their Arduino sketches.
 
+![image](assets/1.png)
+
 ## Table of Contents
 
 - [Key Features](#key-features)
@@ -32,10 +34,17 @@ This script is perfect for developers who prefer working in the terminal and wan
   - Boards (FQBN)
   - Projects
   - Serial Ports
+  - Libraries
+- **Library Management**: Search, install, update, and uninstall Arduino libraries directly from the tool.
+- **Automatic Backups**: Creates automatic backups of your projects before uploading (keeps last 5 backups).
+- **Operation Logging**: Tracks all operations (uploads, library installations, etc.) with automatic log rotation.
+- **Enhanced Error Messages**: Context-specific error messages with actionable troubleshooting suggestions.
+- **Built-in Help System**: Quick access to keyboard shortcuts, common workflows, and configuration details.
 - **Graceful Fallback**: If `fzf` is not installed, the script provides user-friendly, menu-driven alternatives for all selections.
-- **Smart Uploading**: Remembers your last selected project and asks for confirmation before uploading, saving you time.
+- **Smart Uploading**: Remembers your last selected project and creates backups before uploading.
 - **Create Projects on the Fly**: An integrated option to create a new, properly structured Arduino sketch directly from the project selection menu.
 - **Self-Contained & Portable**: A single script with no complex dependencies other than `arduino-cli`.
+
 
 ## Get the Tool
 
@@ -186,6 +195,8 @@ Choose option:
 - **8. Install a Core**: Helps you install additional board support packages.
 - **9. Open Serial Monitor**: Connects to the selected port to view `Serial.print()` output from your board.
 - **0. Edit Project (nvim)**: Opens the current project in Neovim for editing.
+- **R. Manage Libraries**: Search, install, update, and uninstall Arduino libraries.
+- **H. Help**: Shows quick help with keyboard shortcuts and common workflows.
 - **q. Exit**: Exits the script.
 
 ### Keyboard Shortcuts
@@ -202,6 +213,8 @@ For faster access, you can use the following keyboard shortcuts instead of menu 
 - **i**: Install Core
 - **m**: Open Serial Monitor
 - **e**: Edit Project (nvim)
+- **r**: Manage Libraries
+- **h**: Show Help
 - **v**: Update Script (when update is available)
 
 ### Configuration
@@ -233,9 +246,51 @@ SKETCH_DIR="$HOME/Arduino"
 
 ### Monitoring Serial Output
 
-1. Ensure correct port is selected (option `B`)
+1. Ensure correct port is selected (option `P`)
 2. Use option `M` to open the serial monitor
 3. Press Ctrl+C to exit the monitor when done
+
+### Managing Libraries
+
+1. Use option `R` to open library management
+2. Choose from:
+   - Search and install new libraries
+   - List currently installed libraries
+   - Update all libraries to latest versions
+   - Uninstall libraries you no longer need
+
+### Automatic Backups
+
+- Backups are created automatically before each upload
+- Located in `~/.arduino-cli-manager/backups/`
+- Last 5 backups per project are kept
+- Older backups are automatically cleaned up
+
+### Operation Logs
+
+- All operations are logged to `~/.arduino-cli-manager/logs/arduino-manager.log`
+- Logs include timestamps, operation type, status, and details
+- Automatic log rotation when file exceeds 1MB
+
+## Troubleshooting
+
+### Common Issues
+
+**Upload fails:**
+- Check board is properly connected
+- Verify correct port is selected
+- Try pressing reset button on board
+- Close other programs using the serial port
+
+**Compilation errors:**
+- Check code for syntax errors
+- Ensure all required libraries are installed (use `R` to manage libraries)
+- Verify the selected board (FQBN) is correct
+
+**Board not detected:**
+- Check USB cable connection
+- Try a different USB port
+- Install required drivers for your board
 
 ## License
 
