@@ -88,6 +88,32 @@ brew install arduino-cli
 ```
 For other methods, see the [official Arduino CLI installation guide](https://arduino.github.io/arduino-cli/latest/installation/).
 
+
+### Global Installation (Optional)
+
+To run the tool from anywhere in your system:
+
+```bash
+# Run the installation script
+./install.sh
+```
+
+This will:
+- Install the tool to `~/.local/bin/arduino-manager`
+- Optionally add `~/.local/bin` to your PATH
+- Optionally create an alias `acm` for quick access
+
+After installation, you can run from anywhere:
+```bash
+arduino-manager    # Full command
+acm               # Using alias (if created)
+```
+
+To uninstall:
+```bash
+./uninstall.sh
+```
+
 2. Initialize and update the core index:
 ```bash
 arduino-cli config init
