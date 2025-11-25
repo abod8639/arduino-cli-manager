@@ -10,7 +10,8 @@
 
 This script is perfect for developers who prefer working in the terminal and want a more efficient way to compile, upload, and monitor their Arduino sketches.
 
-![image](assets/1.png)
+<!-- ![image](assets/1.png) -->
+<img src="assets/1.png" width="300" height="360" />
 
 ## Table of Contents
 
