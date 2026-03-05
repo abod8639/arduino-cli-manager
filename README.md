@@ -68,6 +68,24 @@ chmod +x arduino-cli-manager.sh
 | `jq` | Update notifications | Recommended |
 | `nvim` | Integrated code editing | Optional |
 
+<!-- install Prerequisites command  -->
+
+### Arch Linux
+```bash
+yay -S arduino-cli fzf jq neovim
+```
+
+### Debian/Ubuntu
+```bash
+sudo apt update
+sudo apt install arduino-cli fzf jq neovim
+```
+
+### Fedora
+```bash
+sudo dnf install arduino-cli fzf jq neovim
+```
+
 ---
 
 ## How to Use
