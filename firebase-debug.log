@@ -1,0 +1,21 @@
+[debug] [2026-03-05T05:08:53.137Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-05T05:08:53.139Z] > authorizing via signed-in user (abot8639@gmail.com)
+[debug] [2026-03-05T05:08:53.140Z] Checked if tokens are valid: false, expires at: 1772682300388
+[debug] [2026-03-05T05:08:53.140Z] Checked if tokens are valid: false, expires at: 1772682300388
+[debug] [2026-03-05T05:08:53.140Z] > refreshing access token with scopes: []
+[debug] [2026-03-05T05:08:53.142Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-05T05:08:53.142Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-05T05:08:53.143Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-05T05:08:53.143Z] > authorizing via signed-in user (abot8639@gmail.com)
+[debug] [2026-03-05T05:08:53.144Z] Checked if tokens are valid: false, expires at: 1772682300388
+[debug] [2026-03-05T05:08:53.144Z] Checked if tokens are valid: false, expires at: 1772682300388
+[debug] [2026-03-05T05:08:53.144Z] > refreshing access token with scopes: []
+[debug] [2026-03-05T05:08:53.144Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-05T05:08:53.144Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-05T05:08:53.426Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-05T05:08:53.426Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-05T05:08:53.443Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/flutter-esp32-1/billingInfo [none]
+[debug] [2026-03-05T05:08:53.446Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-05T05:08:53.446Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-05T05:08:53.460Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/flutter-esp32-1/billingInfo [none]
+[debug] [2026-03-05T05:08:54.003Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/flutter-esp32-1/billingInfo 403

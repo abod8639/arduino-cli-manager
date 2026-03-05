@@ -1,0 +1,9 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = true
+[remote "origin"]
+	url = https://github.com/abod8639/arduino-cli-manager.git
+	tagOpt = --no-tags
+	fetch = +refs/*:refs/*
+	mirror = true
