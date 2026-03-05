@@ -2,7 +2,7 @@
 
 _pkgname=arduino-cli-manager
 pkgname=${_pkgname}-git
-pkgver=r61.29d67dd
+pkgver=v2.0.0.r4.718d108
 pkgrel=1
 pkgdesc="A powerful interactive shell script to manage Arduino CLI projects"
 arch=('any')
@@ -16,8 +16,8 @@ source=("${_pkgname}::git+https://github.com/abod8639/${_pkgname}.git")
 sha256sums=('SKIP')
 
 pkgver() {
-  cd "$_pkgname"
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  cd "$srcdir/${pkgname%-git}"
+  git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g'
 }
 
 package() {
