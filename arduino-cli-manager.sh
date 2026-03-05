@@ -8,8 +8,8 @@ set -o pipefail  # Exit on pipe failures
 # This script is licensed under the MIT License.
 # See the LICENSE file for details.
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get script directory (finds real directory through symlinks)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
 # Source all modules in order
 source "$SCRIPT_DIR/lib/config.sh"
